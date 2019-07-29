@@ -72,11 +72,11 @@ public class FlowOperationsService {
     private SwitchConnectedDeviceRepository switchConnectedDeviceRepository;
 
     public FlowOperationsService(RepositoryFactory repositoryFactory, TransactionManager transactionManager) {
-        this.islRepository = repositoryFactory.createIslRepository();
-        this.switchRepository = repositoryFactory.createSwitchRepository();
-        this.flowRepository = repositoryFactory.createFlowRepository();
-        this.flowPathRepository = repositoryFactory.createFlowPathRepository();
-        this.switchConnectedDeviceRepository = repositoryFactory.createSwitchConnectedDeviceRepository();
+        this.islRepository = repositoryFactory.getIslRepository();
+        this.switchRepository = repositoryFactory.getSwitchRepository();
+        this.flowRepository = repositoryFactory.getFlowRepository();
+        this.flowPathRepository = repositoryFactory.getFlowPathRepository();
+        this.switchConnectedDeviceRepository = repositoryFactory.getSwitchConnectedDeviceRepository();
         this.transactionManager = transactionManager;
     }
 
@@ -276,8 +276,6 @@ public class FlowOperationsService {
             }
 
             flowDashboardLogger.onFlowPatchUpdate(currentFlow);
-
-            flowRepository.createOrUpdate(currentFlow);
 
             return Optional.of(result.updatedFlow(currentFlow).build());
 

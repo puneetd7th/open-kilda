@@ -63,8 +63,8 @@ public class ValidationServiceImpl implements ValidationService {
     private final long lldpMeterBurstSizeInPackets;
 
     public ValidationServiceImpl(PersistenceManager persistenceManager, SwitchManagerTopologyConfig topologyConfig) {
-        this.flowPathRepository = persistenceManager.getRepositoryFactory().createFlowPathRepository();
-        this.switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
+        this.flowPathRepository = persistenceManager.getRepositoryFactory().getFlowPathRepository();
+        this.switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
         this.flowMeterMinBurstSizeInKbits = topologyConfig.getFlowMeterMinBurstSizeInKbits();
         this.flowMeterBurstCoefficient = topologyConfig.getFlowMeterBurstCoefficient();
         this.lldpRateLimit = topologyConfig.getLldpRateLimit();
@@ -83,7 +83,7 @@ public class ValidationServiceImpl implements ValidationService {
                 .map(Cookie::getValue)
                 .collect(Collectors.toSet());
 
-        Collection<FlowPath> paths = flowPathRepository.findByEndpointSwitch(switchId);
+        Collection<FlowPath> paths = flowPathRepository.findByEndpointSwitch(switchId, false);
 
         paths.stream()
                 .filter(flowPath -> flowPath.getFlow().isActualPathId(flowPath.getPathId()))
@@ -99,12 +99,12 @@ public class ValidationServiceImpl implements ValidationService {
     boolean mustHaveLldpRule(SwitchId switchId, FlowPath path) {
         Flow flow = path.getFlow();
 
-        if (flow.getDetectConnectedDevices().isSrcLldp() && flow.getSrcSwitch().getSwitchId().equals(switchId)
+        if (flow.getDetectConnectedDevices().isSrcLldp() && flow.getSrcSwitchId().equals(switchId)
                 && flow.isForward(path)) {
             return true;
         }
 
-        if (flow.getDetectConnectedDevices().isDstLldp() && flow.getDestSwitch().getSwitchId().equals(switchId)
+        if (flow.getDetectConnectedDevices().isDstLldp() && flow.getDestSwitchId().equals(switchId)
                 && flow.isReverse(path)) {
             return true;
         }
@@ -205,7 +205,7 @@ public class ValidationServiceImpl implements ValidationService {
                 .map(MeterEntryMapper.INSTANCE::map)
                 .collect(toList());
 
-        Collection<FlowPath> paths = flowPathRepository.findBySrcSwitch(switchId).stream()
+        Collection<FlowPath> paths = flowPathRepository.findBySrcSwitch(switchId, false).stream()
                 .filter(flowPath -> flowPath.getFlow().isActualPathId(flowPath.getPathId()))
                 .collect(Collectors.toList());
 

@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class LinkOperationsService {
@@ -44,7 +45,7 @@ public class LinkOperationsService {
                                  RepositoryFactory repositoryFactory,
                                  TransactionManager transactionManager) {
         this.carrier = carrier;
-        this.islRepository = repositoryFactory.createIslRepository();
+        this.islRepository = repositoryFactory.getIslRepository();
         this.transactionManager = transactionManager;
     }
 
@@ -78,9 +79,6 @@ public class LinkOperationsService {
 
             isl.setUnderMaintenance(underMaintenance);
             reverceIsl.setUnderMaintenance(underMaintenance);
-
-            islRepository.createOrUpdate(isl);
-            islRepository.createOrUpdate(reverceIsl);
 
             return Optional.of(Arrays.asList(isl, reverceIsl));
         }).orElseThrow(() -> new IslNotFoundException(srcSwitchId, srcPort, dstSwitchId, dstPort));
@@ -131,9 +129,11 @@ public class LinkOperationsService {
                     "ISL must NOT be in active state.");
         }
 
-        isls.forEach(islRepository::delete);
+        List<Isl> islsBefore = isls.stream().map(Isl::new).collect(Collectors.toList());
 
-        return isls;
+        isls.forEach(islRepository::remove);
+
+        return islsBefore;
     }
 
     /**
@@ -163,8 +163,6 @@ public class LinkOperationsService {
             }
 
             isl.setEnableBfd(enableBfd);
-
-            islRepository.createOrUpdate(isl);
 
             carrier.islBfdFlagChanged(isl);
 

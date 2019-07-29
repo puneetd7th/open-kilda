@@ -22,7 +22,6 @@ import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.PathId;
 import org.openkilda.model.SwitchId;
-import org.openkilda.persistence.FetchStrategy;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FlowPathRepository;
 import org.openkilda.persistence.repositories.FlowRepository;
@@ -51,8 +50,8 @@ public abstract class FlowProcessingAction<T extends FlowProcessingFsm<T, S, E, 
     public FlowProcessingAction(PersistenceManager persistenceManager) {
         this.persistenceManager = persistenceManager;
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        this.flowRepository = repositoryFactory.createFlowRepository();
-        this.flowPathRepository = repositoryFactory.createFlowPathRepository();
+        this.flowRepository = repositoryFactory.getFlowRepository();
+        this.flowPathRepository = repositoryFactory.getFlowPathRepository();
     }
 
     @Override
@@ -70,12 +69,6 @@ public abstract class FlowProcessingAction<T extends FlowProcessingFsm<T, S, E, 
 
     protected Flow getFlow(String flowId) {
         return flowRepository.findById(flowId)
-                .orElseThrow(() -> new FlowProcessingException(ErrorType.NOT_FOUND,
-                        format("Flow %s not found", flowId)));
-    }
-
-    protected Flow getFlow(String flowId, FetchStrategy fetchStrategy) {
-        return flowRepository.findById(flowId, fetchStrategy)
                 .orElseThrow(() -> new FlowProcessingException(ErrorType.NOT_FOUND,
                         format("Flow %s not found", flowId)));
     }

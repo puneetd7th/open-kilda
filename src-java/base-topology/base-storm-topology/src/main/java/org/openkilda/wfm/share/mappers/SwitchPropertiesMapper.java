@@ -16,6 +16,7 @@
 package org.openkilda.wfm.share.mappers;
 
 import org.openkilda.messaging.model.SwitchPropertiesDto;
+import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchProperties;
 
 import org.mapstruct.Mapper;
@@ -31,5 +32,5 @@ public interface SwitchPropertiesMapper {
 
     SwitchPropertiesDto map(SwitchProperties switchProperties);
 
-    SwitchProperties map(SwitchPropertiesDto switchProperties);
+    SwitchProperties map(SwitchPropertiesDto switchProperties, Switch switchObj);
 }

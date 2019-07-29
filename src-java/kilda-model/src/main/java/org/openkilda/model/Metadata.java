@@ -22,8 +22,8 @@ import java.io.Serializable;
 /**
  * Represents information about a metadata.
  * Uses 64 bit to encode information about the packet:
- *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |L|O|                      Reserved Prefix                      |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -39,10 +39,10 @@ public class Metadata implements Serializable {
     private static final long serialVersionUID = 5505079196135886296L;
 
     public static final long METADATA_LLDP_VALUE = 0x0000_0000_0000_0001L;
-    public static final long METADATA_LLDP_MASK =  0x0000_0000_0000_0001L;
+    public static final long METADATA_LLDP_MASK = 0x0000_0000_0000_0001L;
 
     public static final long METADATA_ONE_SWITCH_FLOW_VALUE = 0x0000_0000_0000_0002L;
-    public static final long METADATA_ONE_SWITCH_FLOW_MASK =  0x0000_0000_0000_0002L;
+    public static final long METADATA_ONE_SWITCH_FLOW_MASK = 0x0000_0000_0000_0002L;
 
     private final long value;
 

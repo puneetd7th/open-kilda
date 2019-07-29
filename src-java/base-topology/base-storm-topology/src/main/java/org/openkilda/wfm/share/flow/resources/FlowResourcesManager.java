@@ -53,7 +53,7 @@ public class FlowResourcesManager {
 
     public FlowResourcesManager(PersistenceManager persistenceManager, FlowResourcesConfig config) {
         transactionManager = persistenceManager.getTransactionManager();
-        switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
+        switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
 
         this.cookiePool = new CookiePool(persistenceManager, config.getMinFlowCookie(), config.getMaxFlowCookie());
         this.meterPool = new MeterPool(persistenceManager,

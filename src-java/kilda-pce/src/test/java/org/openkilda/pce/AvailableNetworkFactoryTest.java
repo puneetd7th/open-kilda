@@ -57,8 +57,8 @@ public class AvailableNetworkFactoryTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
 
-        when(repositoryFactory.createIslRepository()).thenReturn(islRepository);
-        when(repositoryFactory.createFlowPathRepository()).thenReturn(flowPathRepository);
+        when(repositoryFactory.getIslRepository()).thenReturn(islRepository);
+        when(repositoryFactory.getFlowPathRepository()).thenReturn(flowPathRepository);
 
         availableNetworkFactory = new AvailableNetworkFactory(config, repositoryFactory);
     }

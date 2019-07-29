@@ -52,10 +52,10 @@ public class SwitchRuleServiceImpl implements SwitchRuleService {
     private SwitchRepository switchRepository;
 
     public SwitchRuleServiceImpl(SwitchManagerCarrier carrier, RepositoryFactory repositoryFactory) {
-        flowPathRepository = repositoryFactory.createFlowPathRepository();
-        switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
-        islRepository = repositoryFactory.createIslRepository();
-        switchRepository = repositoryFactory.createSwitchRepository();
+        flowPathRepository = repositoryFactory.getFlowPathRepository();
+        switchPropertiesRepository = repositoryFactory.getSwitchPropertiesRepository();
+        islRepository = repositoryFactory.getIslRepository();
+        switchRepository = repositoryFactory.getSwitchRepository();
         this.carrier = carrier;
     }
 
@@ -74,7 +74,7 @@ public class SwitchRuleServiceImpl implements SwitchRuleService {
         if (switchProperties.isPresent()) {
             data.setMultiTable(switchProperties.get().isMultiTable());
             data.setSwitchLldp(switchProperties.get().isSwitchLldp());
-            Collection<FlowPath> flowPaths = flowPathRepository.findBySrcSwitch(switchId);
+            Collection<FlowPath> flowPaths = flowPathRepository.findBySrcSwitch(switchId, false);
             List<Integer> flowPorts = new ArrayList<>();
             Set<Integer> flowLldpPorts = new HashSet<>();
             fillFlowPorts(switchProperties.get(), flowPaths, flowPorts, flowLldpPorts);
@@ -104,7 +104,7 @@ public class SwitchRuleServiceImpl implements SwitchRuleService {
         if (switchProperties.isPresent()) {
             data.setMultiTable(switchProperties.get().isMultiTable());
             data.setSwitchLldp(switchProperties.get().isSwitchLldp());
-            Collection<FlowPath> flowPaths = flowPathRepository.findBySrcSwitch(switchId);
+            Collection<FlowPath> flowPaths = flowPathRepository.findBySrcSwitch(switchId, false);
             List<Integer> flowPorts = new ArrayList<>();
             Set<Integer> flowLldpPorts = new HashSet<>();
             fillFlowPorts(switchProperties.get(), flowPaths, flowPorts, flowLldpPorts);

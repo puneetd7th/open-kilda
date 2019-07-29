@@ -96,18 +96,16 @@ public abstract class AbstractFlowTest {
             }
 
             @Override
-            public RetryPolicy makeRetryPolicyBlank() {
+            public RetryPolicy makeDefaultRetryPolicy() {
                 return new RetryPolicy().retryIf(result -> false);
             }
         });
 
-        when(featureTogglesRepository.find()).thenReturn(Optional.of(
-                FeatureToggles.DEFAULTS.toBuilder()
-                        .createFlowEnabled(true)
-                        .updateFlowEnabled(true)
-                        .deleteFlowEnabled(true)
-                        .build()
-        ));
+        FeatureToggles toggles = new FeatureToggles(FeatureToggles.DEFAULTS);
+        toggles.setCreateFlowEnabled(true);
+        toggles.setUpdateFlowEnabled(true);
+        toggles.setDeleteFlowEnabled(true);
+        when(featureTogglesRepository.find()).thenReturn(Optional.of(toggles));
     }
 
     protected SpeakerFlowSegmentResponse buildSpeakerResponse(FlowSegmentRequest flowRequest) {

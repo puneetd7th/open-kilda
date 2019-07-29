@@ -46,7 +46,7 @@ public abstract class BaseFlowRuleRemovalAction<T extends FlowProcessingFsm<T, S
     public BaseFlowRuleRemovalAction(PersistenceManager persistenceManager, FlowResourcesManager resourcesManager) {
         super(persistenceManager);
         this.commandBuilderFactory = new FlowCommandBuilderFactory(resourcesManager);
-        switchPropertiesRepository = persistenceManager.getRepositoryFactory().createSwitchPropertiesRepository();
+        switchPropertiesRepository = persistenceManager.getRepositoryFactory().getSwitchPropertiesRepository();
     }
 
     protected boolean isFlowTheLastUserOfSharedLldpPortRule(

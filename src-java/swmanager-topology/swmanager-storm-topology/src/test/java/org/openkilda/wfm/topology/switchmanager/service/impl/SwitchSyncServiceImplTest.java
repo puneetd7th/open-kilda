@@ -105,9 +105,9 @@ public class SwitchSyncServiceImplTest {
         FlowPathRepository flowPathRepository = Mockito.mock(FlowPathRepository.class);
         TransitVlanRepository transitVlanRepository = Mockito.mock(TransitVlanRepository.class);
 
-        when(repositoryFactory.createFlowPathRepository()).thenReturn(flowPathRepository);
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
-        when(repositoryFactory.createTransitVlanRepository()).thenReturn(transitVlanRepository);
+        when(repositoryFactory.getFlowPathRepository()).thenReturn(flowPathRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getTransitVlanRepository()).thenReturn(transitVlanRepository);
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
 
         Properties configProps = new Properties();

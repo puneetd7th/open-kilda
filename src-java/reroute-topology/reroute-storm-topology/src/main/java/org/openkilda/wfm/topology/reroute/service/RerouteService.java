@@ -64,10 +64,10 @@ public class RerouteService {
     private TransactionManager transactionManager;
 
     public RerouteService(PersistenceManager persistenceManager) {
-        this.flowRepository = persistenceManager.getRepositoryFactory().createFlowRepository();
-        this.flowPathRepository = persistenceManager.getRepositoryFactory().createFlowPathRepository();
-        this.pathRepository = persistenceManager.getRepositoryFactory().createFlowPathRepository();
-        this.pathSegmentRepository = persistenceManager.getRepositoryFactory().createPathSegmentRepository();
+        this.flowRepository = persistenceManager.getRepositoryFactory().getFlowRepository();
+        this.flowPathRepository = persistenceManager.getRepositoryFactory().getFlowPathRepository();
+        this.pathRepository = persistenceManager.getRepositoryFactory().getFlowPathRepository();
+        this.pathSegmentRepository = persistenceManager.getRepositoryFactory().getPathSegmentRepository();
         this.transactionManager = persistenceManager.getTransactionManager();
     }
 
@@ -120,9 +120,9 @@ public class RerouteService {
             boolean failedFlowPath = false;
             for (PathSegment pathSegment : fp.getSegments()) {
                 if (pathSegment.getSrcPort() == port
-                        && switchId.equals(pathSegment.getSrcSwitch().getSwitchId())
+                        && switchId.equals(pathSegment.getSrcSwitchId())
                         || (pathSegment.getDestPort() == port
-                        && switchId.equals(pathSegment.getDestSwitch().getSwitchId()))) {
+                        && switchId.equals(pathSegment.getDestSwitchId()))) {
                     pathSegment.setFailed(true);
                     pathSegmentRepository.updateFailedStatus(fp.getPathId(), pathSegment, true);
                     failedFlowPath = true;
@@ -185,9 +185,9 @@ public class RerouteService {
 
                         if (pathSegment.isFailed()) {
                             affectedIslEndpoints.add(new IslEndpoint(
-                                    pathSegment.getSrcSwitch().getSwitchId(), pathSegment.getSrcPort()));
+                                    pathSegment.getSrcSwitchId(), pathSegment.getSrcPort()));
                             affectedIslEndpoints.add(new IslEndpoint(
-                                    pathSegment.getDestSwitch().getSwitchId(), pathSegment.getDestPort()));
+                                    pathSegment.getDestSwitchId(), pathSegment.getDestPort()));
 
                             if (pathSegment.containsNode(switchId, port)) {
                                 pathSegment.setFailed(false);
@@ -204,7 +204,7 @@ public class RerouteService {
                         // force reroute of failed path only (required due to inaccurate path/segment state management)
                         if (affectedIslEndpoints.isEmpty() && firstSegment != null) {
                             affectedIslEndpoints.add(new IslEndpoint(
-                                    firstSegment.getSrcSwitch().getSwitchId(), firstSegment.getSrcPort()));
+                                    firstSegment.getSrcSwitchId(), firstSegment.getSrcPort()));
                         }
                     }
 

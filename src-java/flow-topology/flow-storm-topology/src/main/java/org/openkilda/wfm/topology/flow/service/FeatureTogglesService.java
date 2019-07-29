@@ -29,7 +29,7 @@ public class FeatureTogglesService {
     private FeatureTogglesRepository featureTogglesRepository;
 
     public FeatureTogglesService(RepositoryFactory repositoryFactory) {
-        this.featureTogglesRepository = repositoryFactory.createFeatureTogglesRepository();
+        this.featureTogglesRepository = repositoryFactory.getFeatureTogglesRepository();
     }
 
     /**

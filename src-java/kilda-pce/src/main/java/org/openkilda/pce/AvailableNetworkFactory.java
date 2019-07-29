@@ -43,18 +43,18 @@ public class AvailableNetworkFactory {
 
     public AvailableNetworkFactory(PathComputerConfig config, RepositoryFactory repositoryFactory) {
         this.config = config;
-        this.islRepository = repositoryFactory.createIslRepository();
-        this.flowPathRepository = repositoryFactory.createFlowPathRepository();
+        this.islRepository = repositoryFactory.getIslRepository();
+        this.flowPathRepository = repositoryFactory.getFlowPathRepository();
     }
 
     /**
      * Gets a {@link AvailableNetwork}.
      *
-     * @param flow                      the flow, for which {@link AvailableNetwork} is constructing.
-     * @param reusePathsResources       reuse resources already allocated by {@param reusePathsResources} paths.
+     * @param flow the flow, for which {@link AvailableNetwork} is constructing.
+     * @param reusePathsResources reuse resources already allocated by {@param reusePathsResources} paths.
      * @return {@link AvailableNetwork} instance.
      */
-    public AvailableNetwork getAvailableNetwork(Flow flow, List<PathId> reusePathsResources)
+    public AvailableNetwork getAvailableNetwork(Flow flow, Collection<PathId> reusePathsResources)
             throws RecoverableException {
         BuildStrategy buildStrategy = BuildStrategy.from(config.getNetworkStrategy());
         AvailableNetwork network = new AvailableNetwork();
@@ -64,10 +64,12 @@ public class AvailableNetworkFactory {
             links.forEach(network::addLink);
 
             if (!reusePathsResources.isEmpty() && !flow.isIgnoreBandwidth()) {
-                // ISLs occupied by the flow (take the bandwidth already occupied by the flow into account).
-                Collection<Isl> flowLinks = islRepository.findActiveAndOccupiedByFlowPathWithAvailableBandwidth(
-                        reusePathsResources, flow.getBandwidth(), flow.getEncapsulationType());
-                flowLinks.forEach(network::addLink);
+                reusePathsResources.forEach(pathId -> {
+                    // ISLs occupied by the flow (take the bandwidth already occupied by the flow into account).
+                    Collection<Isl> flowLinks = islRepository.findActiveAndOccupiedByFlowPathWithAvailableBandwidth(
+                            pathId, flow.getBandwidth(), flow.getEncapsulationType());
+                    flowLinks.forEach(network::addLink);
+                });
             }
         } catch (PersistenceException e) {
             throw new RecoverableException("An error from neo4j", e);
@@ -119,7 +121,7 @@ public class AvailableNetworkFactory {
         for (Isl isl : isls) {
             if (isl.getCost() < 0) {
                 messages.add(String.format("(%s_%d ===> %s_%d cost: %d)",
-                        isl.getSrcSwitch().getSwitchId(), isl.getSrcPort(), isl.getDestSwitch().getSwitchId(),
+                        isl.getSrcSwitchId(), isl.getSrcPort(), isl.getDestSwitchId(),
                         isl.getDestPort(), isl.getCost()));
             }
         }

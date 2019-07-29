@@ -43,6 +43,7 @@ import org.openkilda.messaging.info.rule.SwitchExpectedDefaultFlowEntries;
 import org.openkilda.messaging.info.rule.SwitchExpectedDefaultMeterEntries;
 import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.messaging.info.switches.SwitchValidationResponse;
+import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.SwitchProperties;
 import org.openkilda.persistence.PersistenceManager;
@@ -104,16 +105,17 @@ public class SwitchValidateServiceImplTest {
         SwitchPropertiesRepository switchPropertiesRepository = mock(SwitchPropertiesRepository.class);
         when(switchPropertiesRepository.findBySwitchId(any(SwitchId.class))).thenAnswer((invocation) ->
                 Optional.of(SwitchProperties.builder()
+                        .switchObj(Switch.builder().switchId(invocation.getArgument(0)).build())
                         .multiTable(false)
                         .supportedTransitEncapsulation(DEFAULT_FLOW_ENCAPSULATION_TYPES)
                         .build()));
-        when(repositoryFactory.createSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
+        when(repositoryFactory.getSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
         IslRepository islRepository = Mockito.mock(IslRepository.class);
         when(islRepository.findBySrcSwitch(any(SwitchId.class))).thenAnswer((invocation) ->
                 Collections.emptyList());
-        when(repositoryFactory.createIslRepository()).thenReturn(islRepository);
-        when(repositoryFactory.createFlowPathRepository()).thenReturn(flowPathRepository);
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getIslRepository()).thenReturn(islRepository);
+        when(repositoryFactory.getFlowPathRepository()).thenReturn(flowPathRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
 
         service = new SwitchValidateServiceImpl(carrier, persistenceManager);

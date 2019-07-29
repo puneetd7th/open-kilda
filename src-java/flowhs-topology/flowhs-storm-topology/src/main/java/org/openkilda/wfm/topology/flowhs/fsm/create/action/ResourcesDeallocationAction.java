@@ -50,7 +50,7 @@ public class ResourcesDeallocationAction extends FlowProcessingAction<FlowCreate
 
         this.transactionManager = persistenceManager.getTransactionManager();
         this.resourcesManager = resourcesManager;
-        this.islRepository = persistenceManager.getRepositoryFactory().createIslRepository();
+        this.islRepository = persistenceManager.getRepositoryFactory().getIslRepository();
     }
 
     @Override
@@ -71,14 +71,16 @@ public class ResourcesDeallocationAction extends FlowProcessingAction<FlowCreate
                 resourcesManager.deallocatePathResources(resources);
                 FlowPath forward = getFlowPath(resources.getForward().getPathId());
                 FlowPath reverse = getFlowPath(resources.getReverse().getPathId());
-                Stream.of(forward, reverse)
-                        .peek(flowPathRepository::delete)
+                FlowPath forwardBefore = new FlowPath(forward);
+                FlowPath reverseBefore = new FlowPath(forward);
+                flowPathRepository.remove(forward);
+                flowPathRepository.remove(reverse);
+                Stream.of(forwardBefore, reverseBefore)
                         .map(FlowPath::getSegments)
                         .flatMap(List::stream)
                         .forEach(segment -> updateIslAvailableBandwidth(stateMachine.getFlowId(), segment));
 
                 flow.resetPaths();
-                flowRepository.createOrUpdate(flow);
             }
         });
 
@@ -86,16 +88,14 @@ public class ResourcesDeallocationAction extends FlowProcessingAction<FlowCreate
     }
 
     private void updateIslAvailableBandwidth(String flowId, PathSegment pathSegment) {
-        SwitchId srcSwitch = pathSegment.getSrcSwitch().getSwitchId();
-        SwitchId destSwitch = pathSegment.getDestSwitch().getSwitchId();
+        SwitchId srcSwitch = pathSegment.getSrcSwitchId();
+        SwitchId destSwitch = pathSegment.getDestSwitchId();
         long usedBandwidth = flowPathRepository.getUsedBandwidthBetweenEndpoints(
                 srcSwitch, pathSegment.getSrcPort(), destSwitch, pathSegment.getDestPort());
 
         islRepository.findByEndpoints(srcSwitch, pathSegment.getSrcPort(), destSwitch, pathSegment.getDestPort())
                 .ifPresent(isl -> {
                     isl.setAvailableBandwidth(isl.getMaxBandwidth() - usedBandwidth);
-
-                    islRepository.createOrUpdate(isl);
                     log.debug("Released used bandwidth from flow {} on the link {}", flowId, isl);
                 });
     }

@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface FlowMeterRepository extends Repository<FlowMeter> {
+    Collection<FlowMeter> findAll();
+
     Optional<FlowMeter> findLldpMeterByMeterIdSwitchIdAndFlowId(MeterId meterId, SwitchId switchId, String flowId);
 
     /**
@@ -36,12 +38,19 @@ public interface FlowMeterRepository extends Repository<FlowMeter> {
     Collection<FlowMeter> findByPathId(PathId pathId);
 
     /**
-     * Find a meter id which is not assigned to any flow.
-     * Use the provided {@code defaultMeterId} as the first candidate.
+     * Find the maximum among assigned meter IDs.
      *
-     * @param switchId       the switch defines where the meter is applied on.
-     * @param defaultMeterId the potential meter to be checked first.
-     * @return a meter id or {@link Optional#empty()} if no meter available.
+     * @param switchId the switch defines where the meter is applied on.
+     * @return the maximum meter ID or {@link Optional#empty()} if there's no assigned meter.
      */
-    Optional<MeterId> findUnassignedMeterId(SwitchId switchId, MeterId defaultMeterId);
+    Optional<MeterId> findMaximumAssignedMeter(SwitchId switchId);
+
+    /**
+     * Find the first (lowest by value) meter ID which is not assigned to any flow.
+     *
+     * @param switchId the switch defines where the meter is applied on.
+     * @param startMeterId the lowest value for a potential meter ID.
+     * @return the found meter ID
+     */
+    MeterId findFirstUnassignedMeter(SwitchId switchId, MeterId startMeterId);
 }

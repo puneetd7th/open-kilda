@@ -15,103 +15,164 @@
 
 package org.openkilda.model.history;
 
+import org.openkilda.model.CompositeDataEntity;
 import org.openkilda.model.Cookie;
 import org.openkilda.model.FlowPathStatus;
 import org.openkilda.model.MeterId;
 import org.openkilda.model.SwitchId;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.experimental.Delegate;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.factory.Mappers;
+
+import java.io.Serializable;
 
 /**
  * Represents information about the flow state.
  * Contains all Flow state.
  */
-@Data
-@NoArgsConstructor
-@EqualsAndHashCode(exclude = "entityId")
-@NodeEntity(label = "flow_dump")
-@Builder
-@AllArgsConstructor
-public class FlowDump {
-    // Hidden as needed for OGM only.
-    @Id
-    @GeneratedValue
-    @Setter(AccessLevel.NONE)
-    @Getter(AccessLevel.NONE)
-    private Long entityId;
+public class FlowDump implements CompositeDataEntity<FlowDump.FlowDumpData> {
+    @Getter
+    @Delegate
+    @JsonIgnore
+    private FlowDumpData data;
 
-    @Property(name = "task_id")
-    private String taskId;
+    public FlowDump() {
+        data = new FlowDumpDataImpl();
+    }
 
-    @Property(name = "flow_id")
-    private String flowId;
+    public FlowDump(@NonNull FlowDumpData data) {
+        this.data = data;
+    }
 
-    private String type;
+    /**
+     * Defines persistable data of the FlowDump.
+     */
+    public interface FlowDumpData {
+        String getTaskId();
 
-    private long bandwidth;
+        void setTaskId(String taskId);
 
-    @Property(name = "ignoreBandwidth")
-    private boolean ignoreBandwidth;
+        String getFlowId();
 
-    @Property(name = "forward_cookie")
-    @Convert(graphPropertyType = Long.class)
-    private Cookie forwardCookie;
+        void setFlowId(String flowId);
 
-    @Property(name = "reverse_cookie")
-    @Convert(graphPropertyType = Long.class)
-    private Cookie reverseCookie;
+        String getType();
 
-    @Property(name = "src_switch")
-    @Convert(graphPropertyType = String.class)
-    private SwitchId sourceSwitch;
+        void setType(String type);
 
-    @Property(name = "dst_switch")
-    @Convert(graphPropertyType = String.class)
-    private SwitchId destinationSwitch;
+        long getBandwidth();
 
-    @Property(name = "src_port")
-    private int sourcePort;
+        void setBandwidth(long bandwidth);
 
-    @Property(name = "dst_port")
-    private int destinationPort;
+        boolean isIgnoreBandwidth();
 
-    @Property(name = "src_vlan")
-    private int sourceVlan;
+        void setIgnoreBandwidth(boolean ignoreBandwidth);
 
-    @Property(name = "dst_vlan")
-    private int destinationVlan;
+        Cookie getForwardCookie();
 
-    @Property(name = "forward_meter_id")
-    @Convert(graphPropertyType = Long.class)
-    private MeterId forwardMeterId;
+        void setForwardCookie(Cookie forwardCookie);
 
-    @Property(name = "reverse_meter_id")
-    @Convert(graphPropertyType = Long.class)
-    private MeterId reverseMeterId;
+        Cookie getReverseCookie();
 
-    @Property(name = "forward_path")
-    private String forwardPath;
+        void setReverseCookie(Cookie reverseCookie);
 
-    @Property(name = "reverse_path")
-    private String reversePath;
+        SwitchId getSourceSwitch();
 
-    @Property(name = "forward_status")
-    @Convert(graphPropertyType = String.class)
-    private FlowPathStatus forwardStatus;
+        void setSourceSwitch(SwitchId sourceSwitch);
 
-    @Property(name = "reverse_status")
-    @Convert(graphPropertyType = String.class)
-    private FlowPathStatus reverseStatus;
+        SwitchId getDestinationSwitch();
+
+        void setDestinationSwitch(SwitchId destinationSwitch);
+
+        int getSourcePort();
+
+        void setSourcePort(int sourcePort);
+
+        int getDestinationPort();
+
+        void setDestinationPort(int destinationPort);
+
+        int getSourceVlan();
+
+        void setSourceVlan(int sourceVlan);
+
+        int getDestinationVlan();
+
+        void setDestinationVlan(int destinationVlan);
+
+        MeterId getForwardMeterId();
+
+        void setForwardMeterId(MeterId forwardMeterId);
+
+        MeterId getReverseMeterId();
+
+        void setReverseMeterId(MeterId reverseMeterId);
+
+        String getForwardPath();
+
+        void setForwardPath(String forwardPath);
+
+        String getReversePath();
+
+        void setReversePath(String reversePath);
+
+        FlowPathStatus getForwardStatus();
+
+        void setForwardStatus(FlowPathStatus forwardStatus);
+
+        FlowPathStatus getReverseStatus();
+
+        void setReverseStatus(FlowPathStatus reverseStatus);
+
+        FlowEvent getFlowEvent();
+
+        void setFlowEvent(FlowEvent flowEvent);
+    }
+
+    /**
+     * POJO implementation of FlowDumpData.
+     */
+    @Data
+    @NoArgsConstructor
+    final class FlowDumpDataImpl implements FlowDumpData, Serializable {
+        private static final long serialVersionUID = 1L;
+        String taskId;
+        String flowId;
+        String type;
+        long bandwidth;
+        boolean ignoreBandwidth;
+        Cookie forwardCookie;
+        Cookie reverseCookie;
+        SwitchId sourceSwitch;
+        SwitchId destinationSwitch;
+        int sourcePort;
+        int destinationPort;
+        int sourceVlan;
+        int destinationVlan;
+        MeterId forwardMeterId;
+        MeterId reverseMeterId;
+        String forwardPath;
+        String reversePath;
+        FlowPathStatus forwardStatus;
+        FlowPathStatus reverseStatus;
+        @ToString.Exclude
+        @EqualsAndHashCode.Exclude
+        FlowEvent flowEvent;
+    }
+
+    @Mapper
+    public interface FlowDumpCloner {
+        FlowDumpCloner INSTANCE = Mappers.getMapper(FlowDumpCloner.class);
+
+        void copy(FlowDumpData source, @MappingTarget FlowDumpData target);
+    }
 }

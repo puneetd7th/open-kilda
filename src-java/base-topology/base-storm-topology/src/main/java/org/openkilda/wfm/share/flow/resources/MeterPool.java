@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The resource pool is responsible for meter de-/allocation.
@@ -50,8 +51,8 @@ public class MeterPool {
     public MeterPool(PersistenceManager persistenceManager, MeterId minMeterId, MeterId maxMeterId) {
         transactionManager = persistenceManager.getTransactionManager();
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        flowMeterRepository = repositoryFactory.createFlowMeterRepository();
-        switchRepository = repositoryFactory.createSwitchRepository();
+        flowMeterRepository = repositoryFactory.getFlowMeterRepository();
+        switchRepository = repositoryFactory.getSwitchRepository();
 
         this.minMeterId = minMeterId;
         this.maxMeterId = maxMeterId;
@@ -74,21 +75,25 @@ public class MeterPool {
      */
     public MeterId allocate(Switch theSwitch, String flowId, PathId pathId) {
         return transactionManager.doInTransaction(() -> {
-            String noMetersErrorMessage = format("No meter available for switch %s", theSwitch);
-
-            MeterId availableMeterId = flowMeterRepository.findUnassignedMeterId(theSwitch.getSwitchId(), minMeterId)
-                    .orElseThrow(() -> new ResourceNotAvailableException(noMetersErrorMessage));
-            if (availableMeterId.compareTo(maxMeterId) > 0) {
-                throw new ResourceNotAvailableException(noMetersErrorMessage);
+            Optional<MeterId> availableMeterId = flowMeterRepository.findMaximumAssignedMeter(theSwitch.getSwitchId())
+                    .map(meterId -> new MeterId(meterId.getValue() + 1))
+                    .filter(meterId -> meterId.compareTo(maxMeterId) <= 0);
+            if (!availableMeterId.isPresent()) {
+                availableMeterId =
+                        Optional.of(flowMeterRepository.findFirstUnassignedMeter(theSwitch.getSwitchId(), minMeterId))
+                                .filter(meterId -> meterId.compareTo(maxMeterId) <= 0);
+            }
+            if (!availableMeterId.isPresent()) {
+                throw new ResourceNotAvailableException(format("No meter available for switch %s", theSwitch));
             }
 
             FlowMeter flowMeter = FlowMeter.builder()
-                    .meterId(availableMeterId)
+                    .meterId(availableMeterId.get())
                     .switchId(theSwitch.getSwitchId())
                     .flowId(flowId)
                     .pathId(pathId)
                     .build();
-            flowMeterRepository.createOrUpdate(flowMeter);
+            flowMeterRepository.add(flowMeter);
 
             return flowMeter.getMeterId();
         });
@@ -104,7 +109,7 @@ public class MeterPool {
                     .flatMap(Collection::stream)
                     .collect(toList());
 
-            meters.forEach(flowMeterRepository::delete);
+            meters.forEach(flowMeterRepository::remove);
         });
     }
 }

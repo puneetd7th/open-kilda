@@ -27,7 +27,7 @@ import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.SwitchProperties;
 import org.openkilda.model.SwitchStatus;
-import org.openkilda.persistence.Neo4jBasedTest;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 import org.openkilda.persistence.repositories.FlowRepository;
 import org.openkilda.persistence.repositories.PortPropertiesRepository;
 import org.openkilda.persistence.repositories.RepositoryFactory;
@@ -42,7 +42,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.Set;
 
-public class SwitchOperationsServiceTest extends Neo4jBasedTest {
+public class SwitchOperationsServiceTest extends InMemoryGraphBasedTest {
     public static final String TEST_FLOW_ID_1 = "test_flow_1";
     private static SwitchRepository switchRepository;
     private static SwitchPropertiesRepository switchPropertiesRepository;
@@ -56,10 +56,10 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
     @BeforeClass
     public static void setUpOnce() {
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        switchRepository = repositoryFactory.createSwitchRepository();
-        switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
-        portPropertiesRepository = repositoryFactory.createPortPropertiesRepository();
-        flowRepository = repositoryFactory.createFlowRepository();
+        switchRepository = repositoryFactory.getSwitchRepository();
+        switchPropertiesRepository = repositoryFactory.getSwitchPropertiesRepository();
+        portPropertiesRepository = repositoryFactory.getPortPropertiesRepository();
+        flowRepository = repositoryFactory.getFlowRepository();
 
         SwitchOperationsServiceCarrier carrier = new SwitchOperationsServiceCarrier() {
             @Override
@@ -73,7 +73,7 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
     @Test
     public void shouldUpdateLinkUnderMaintenanceFlag() throws SwitchNotFoundException {
         Switch sw = Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build();
-        switchRepository.createOrUpdate(sw);
+        switchRepository.add(sw);
 
         switchOperationsService.updateSwitchUnderMaintenanceFlag(TEST_SWITCH_ID, true);
         sw = switchRepository.findById(TEST_SWITCH_ID).get();
@@ -86,10 +86,9 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
 
     @Test
     public void shouldDeletePortPropertiesWhenDeletingSwitch() throws SwitchNotFoundException {
-        Switch sw = Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build();
-        switchRepository.createOrUpdate(sw);
+        Switch sw = switchRepository.add(Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build());
         PortProperties portProperties = PortProperties.builder().switchObj(sw).port(7).discoveryEnabled(false).build();
-        portPropertiesRepository.createOrUpdate(portProperties);
+        portPropertiesRepository.add(portProperties);
 
         switchOperationsService.deleteSwitch(TEST_SWITCH_ID, false);
         assertFalse(switchRepository.findById(TEST_SWITCH_ID).isPresent());
@@ -98,8 +97,7 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
 
     @Test(expected = IllegalSwitchPropertiesException.class)
     public void shouldValidateSupportedEncapsulationTypeWhenUpdatingSwitchProperties() {
-        Switch sw = Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build();
-        switchRepository.createOrUpdate(sw);
+        Switch sw = switchRepository.add(Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build());
         createSwitchProperties(sw, Collections.singleton(FlowEncapsulationType.TRANSIT_VLAN), false, false, false);
 
         switchOperationsService.updateSwitchProperties(TEST_SWITCH_ID, new SwitchPropertiesDto());
@@ -107,8 +105,7 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
 
     @Test(expected = IllegalSwitchPropertiesException.class)
     public void shouldValidateMultiTableFlagWhenUpdatingSwitchProperties() {
-        Switch sw = Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build();
-        switchRepository.createOrUpdate(sw);
+        Switch sw = switchRepository.add(Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build());
         createSwitchProperties(sw, Collections.singleton(FlowEncapsulationType.TRANSIT_VLAN), true, true, false);
 
         // user can't disable multiTable without disabling LLDP
@@ -123,10 +120,10 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
 
     @Test(expected = IllegalSwitchPropertiesException.class)
     public void shouldValidateFlowWithLldpFlagWhenUpdatingSwitchProperties() {
-        Switch firstSwitch = Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build();
-        Switch secondSwitch = Switch.builder().switchId(TEST_SWITCH_ID_2).status(SwitchStatus.ACTIVE).build();
-        switchRepository.createOrUpdate(firstSwitch);
-        switchRepository.createOrUpdate(secondSwitch);
+        Switch firstSwitch = switchRepository.add(Switch.builder()
+                .switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build());
+        Switch secondSwitch = switchRepository.add(Switch.builder()
+                .switchId(TEST_SWITCH_ID_2).status(SwitchStatus.ACTIVE).build());
 
         Flow flow = Flow.builder()
                 .flowId(TEST_FLOW_ID_1)
@@ -135,7 +132,7 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
                 .detectConnectedDevices(new DetectConnectedDevices(
                         true, false, true, false, false, false, false, false))
                 .build();
-        flowRepository.createOrUpdate(flow);
+        flowRepository.add(flow);
 
         createSwitchProperties(
                 firstSwitch, Collections.singleton(FlowEncapsulationType.TRANSIT_VLAN), true, false, false);
@@ -152,8 +149,7 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
 
     @Test(expected = IllegalSwitchPropertiesException.class)
     public void shouldValidateMultiTableFlagWhenUpdatingSwitchPropertiesWithArp() {
-        Switch sw = Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build();
-        switchRepository.createOrUpdate(sw);
+        Switch sw = switchRepository.add(Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build());
         createSwitchProperties(sw, Collections.singleton(FlowEncapsulationType.TRANSIT_VLAN), true, false, true);
 
         // user can't disable multiTable without disabling ARP
@@ -168,10 +164,10 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
 
     @Test(expected = IllegalSwitchPropertiesException.class)
     public void shouldValidateFlowWithArpFlagWhenUpdatingSwitchProperties() {
-        Switch firstSwitch = Switch.builder().switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build();
-        Switch secondSwitch = Switch.builder().switchId(TEST_SWITCH_ID_2).status(SwitchStatus.ACTIVE).build();
-        switchRepository.createOrUpdate(firstSwitch);
-        switchRepository.createOrUpdate(secondSwitch);
+        Switch firstSwitch = switchRepository.add(Switch.builder()
+                .switchId(TEST_SWITCH_ID).status(SwitchStatus.ACTIVE).build());
+        Switch secondSwitch = switchRepository.add(Switch.builder()
+                .switchId(TEST_SWITCH_ID_2).status(SwitchStatus.ACTIVE).build());
 
         Flow flow = Flow.builder()
                 .flowId(TEST_FLOW_ID_1)
@@ -180,7 +176,7 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
                 .detectConnectedDevices(
                         new DetectConnectedDevices(false, true, false, true, false, false, false, false))
                 .build();
-        flowRepository.createOrUpdate(flow);
+        flowRepository.add(flow);
 
         createSwitchProperties(firstSwitch,
                 Collections.singleton(FlowEncapsulationType.TRANSIT_VLAN), true, false, false);
@@ -204,6 +200,6 @@ public class SwitchOperationsServiceTest extends Neo4jBasedTest {
                 .switchLldp(switchLldp)
                 .switchArp(switchArp)
                 .build();
-        switchPropertiesRepository.createOrUpdate(switchProperties);
+        switchPropertiesRepository.add(switchProperties);
     }
 }

@@ -29,7 +29,7 @@ import org.openkilda.model.PathComputationStrategy;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
 import org.openkilda.persistence.ConstraintViolationException;
-import org.openkilda.persistence.Neo4jBasedTest;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 import org.openkilda.persistence.repositories.FlowCookieRepository;
 import org.openkilda.persistence.repositories.FlowMeterRepository;
 import org.openkilda.persistence.repositories.SwitchRepository;
@@ -46,7 +46,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 @RunWith(JUnitParamsRunner.class)
-public class FlowResourcesManagerTest extends Neo4jBasedTest {
+public class FlowResourcesManagerTest extends InMemoryGraphBasedTest {
 
     private final FlowDto firstFlow = FlowDto.builder()
             .flowId("first-flow")
@@ -125,6 +125,8 @@ public class FlowResourcesManagerTest extends Neo4jBasedTest {
 
     @Before
     public void setUp() {
+        cleanTinkerGraph();
+
         Properties configProps = new Properties();
         configProps.setProperty("flow.meter-id.max", "40");
         configProps.setProperty("flow.vlan.max", "50");
@@ -134,11 +136,11 @@ public class FlowResourcesManagerTest extends Neo4jBasedTest {
         flowResourcesConfig = configurationProvider.getConfiguration(FlowResourcesConfig.class);
         resourcesManager = new FlowResourcesManager(persistenceManager, flowResourcesConfig);
 
-        flowMeterRepository = persistenceManager.getRepositoryFactory().createFlowMeterRepository();
-        flowCookieRepository = persistenceManager.getRepositoryFactory().createFlowCookieRepository();
-        switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
-        switchRepository.findAll().forEach(switchRepository::delete);
-        Stream.of(switch1, switch3, switch4, switch5).forEach(switchRepository::createOrUpdate);
+        flowMeterRepository = repositoryFactory.getFlowMeterRepository();
+        flowCookieRepository = repositoryFactory.getFlowCookieRepository();
+        switchRepository = repositoryFactory.getSwitchRepository();
+        switchRepository.findAll().forEach(switchRepository::remove);
+        Stream.of(switch1, switch3, switch4, switch5).forEach(switchRepository::add);
     }
 
     @Test

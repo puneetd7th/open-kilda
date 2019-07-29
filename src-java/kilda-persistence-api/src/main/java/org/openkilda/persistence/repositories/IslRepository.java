@@ -21,10 +21,11 @@ import org.openkilda.model.PathId;
 import org.openkilda.model.SwitchId;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 public interface IslRepository extends Repository<Isl> {
+    Collection<Isl> findAll();
+
     Collection<Isl> findByEndpoint(SwitchId switchId, int port);
 
     Collection<Isl> findBySrcEndpoint(SwitchId srcSwitchId, int srcPort);
@@ -40,10 +41,10 @@ public interface IslRepository extends Repository<Isl> {
     /**
      * Finds ISLs by incomplete ISL information. If all parameters are null, will be returned a list of all ISLs.
      *
-     * @param srcSwitchId       source switch id.
-     * @param srcPort           source port.
-     * @param dstSwitchId       destination switch id.
-     * @param dstPort           destination port.
+     * @param srcSwitchId source switch id.
+     * @param srcPort source port.
+     * @param dstSwitchId destination switch id.
+     * @param dstPort destination port.
      */
     Collection<Isl> findByPartialEndpoints(SwitchId srcSwitchId, Integer srcPort,
                                            SwitchId dstSwitchId, Integer dstPort);
@@ -55,11 +56,11 @@ public interface IslRepository extends Repository<Isl> {
      * ISLs must have available bandwidth to satisfy the difference between newly requested and already taken by the
      * same flow and support requested transit encapsulation type.
      *
-     * @param pathIds           list of the pathId.
+     * @param pathId the pathId.
      * @param requiredBandwidth required bandwidth amount that should be available on ISLs.
      * @param flowEncapsulationType required encapsulation support
      */
-    Collection<Isl> findActiveAndOccupiedByFlowPathWithAvailableBandwidth(List<PathId> pathIds, long requiredBandwidth,
+    Collection<Isl> findActiveAndOccupiedByFlowPathWithAvailableBandwidth(PathId pathId, long requiredBandwidth,
                                                                           FlowEncapsulationType flowEncapsulationType);
 
     /**
@@ -85,6 +86,7 @@ public interface IslRepository extends Repository<Isl> {
 
     /**
      * Finds all active ISLs, ignores ISLs if they have not enough bandwidth in any direction.
+     *
      * @param requiredBandwidth required available bandwidth amount.
      * @param flowEncapsulationType required encapsulation support
      * @return list of ISLs.
@@ -94,6 +96,7 @@ public interface IslRepository extends Repository<Isl> {
 
     /**
      * Update ISL available bandwidth according to the provided used bandwidth.
+     *
      * @return the result available bandwidth of the updated ISL.
      */
     long updateAvailableBandwidth(SwitchId srcSwitchId, int srcPort, SwitchId dstSwitchId, int dstPort,

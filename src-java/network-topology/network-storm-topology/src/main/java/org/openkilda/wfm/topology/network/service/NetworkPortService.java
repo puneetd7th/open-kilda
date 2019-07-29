@@ -65,8 +65,8 @@ public class NetworkPortService {
                        NetworkTopologyDashboardLogger.Builder dashboardLoggerBuilder) {
         this.carrier = carrier;
         this.transactionManager = persistenceManager.getTransactionManager();
-        this.portPropertiesRepository = persistenceManager.getRepositoryFactory().createPortPropertiesRepository();
-        this.switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
+        this.portPropertiesRepository = persistenceManager.getRepositoryFactory().getPortPropertiesRepository();
+        this.switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
 
         controllerFactory = PortFsm.factory(persistenceManager);
         controllerExecutor = controllerFactory.produceExecutor();
@@ -199,12 +199,11 @@ public class NetworkPortService {
                 .orElseThrow(() -> new PersistenceException(format("Switch %s not found.", endpoint.getDatapath())));
         PortProperties portProperties = portPropertiesRepository
                 .getBySwitchIdAndPort(endpoint.getDatapath(), endpoint.getPortNumber())
-                .orElse(PortProperties.builder()
+                .orElse(portPropertiesRepository.add(PortProperties.builder()
                         .switchObj(sw)
                         .port(endpoint.getPortNumber())
-                        .build());
+                        .build()));
         portProperties.setDiscoveryEnabled(discoveryEnabled);
-        portPropertiesRepository.createOrUpdate(portProperties);
         return portProperties;
     }
 }

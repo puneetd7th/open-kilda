@@ -22,7 +22,6 @@ import org.openkilda.messaging.error.ErrorType;
 import org.openkilda.model.FeatureToggles;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowStatus;
-import org.openkilda.persistence.FetchStrategy;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.FeatureTogglesRepository;
 import org.openkilda.persistence.repositories.IslRepository;
@@ -55,10 +54,10 @@ public class ValidateFlowAction extends NbTrackableAction<FlowUpdateFsm, State, 
     public ValidateFlowAction(PersistenceManager persistenceManager, FlowOperationsDashboardLogger dashboardLogger) {
         super(persistenceManager);
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        featureTogglesRepository = repositoryFactory.createFeatureTogglesRepository();
-        SwitchRepository switchRepository = repositoryFactory.createSwitchRepository();
-        IslRepository islRepository = repositoryFactory.createIslRepository();
-        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
+        featureTogglesRepository = repositoryFactory.getFeatureTogglesRepository();
+        SwitchRepository switchRepository = repositoryFactory.getSwitchRepository();
+        IslRepository islRepository = repositoryFactory.getIslRepository();
+        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.getSwitchPropertiesRepository();
         flowValidator = new FlowValidator(flowRepository, switchRepository, islRepository, switchPropertiesRepository);
         this.dashboardLogger = dashboardLogger;
     }
@@ -105,7 +104,7 @@ public class ValidateFlowAction extends NbTrackableAction<FlowUpdateFsm, State, 
                 }
             }
 
-            Flow foundFlow = getFlow(flowId, FetchStrategy.NO_RELATIONS);
+            Flow foundFlow = getFlow(flowId);
             if (foundFlow.getStatus() == FlowStatus.IN_PROGRESS) {
                 throw new FlowProcessingException(ErrorType.REQUEST_INVALID,
                         format("Flow %s is in progress now", flowId));

@@ -45,7 +45,6 @@ import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.SwitchProperties;
 import org.openkilda.model.TransitVlan;
-import org.openkilda.persistence.FetchStrategy;
 import org.openkilda.persistence.RecoverablePersistenceException;
 import org.openkilda.persistence.repositories.IslRepository;
 import org.openkilda.persistence.repositories.RepositoryFactory;
@@ -84,17 +83,19 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
     @Before
     public void setUp() {
         RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
-        when(repositoryFactory.createFlowPathRepository()).thenReturn(flowPathRepository);
-        when(repositoryFactory.createFeatureTogglesRepository()).thenReturn(featureTogglesRepository);
-        when(repositoryFactory.createSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getFlowPathRepository()).thenReturn(flowPathRepository);
+        when(repositoryFactory.getFeatureTogglesRepository()).thenReturn(featureTogglesRepository);
+        when(featureTogglesRepository.getOrDefault()).then((i) -> featureTogglesRepository.find().orElse(null));
+
+        when(repositoryFactory.getSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
 
         IslRepository islRepository = mock(IslRepository.class);
-        when(repositoryFactory.createIslRepository()).thenReturn(islRepository);
+        when(repositoryFactory.getIslRepository()).thenReturn(islRepository);
 
         FlowEventRepository flowEventRepository = mock(FlowEventRepository.class);
         when(flowEventRepository.existsByTaskId(any())).thenReturn(false);
-        when(repositoryFactory.createFlowEventRepository()).thenReturn(flowEventRepository);
+        when(repositoryFactory.getFlowEventRepository()).thenReturn(flowEventRepository);
 
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
 
@@ -103,7 +104,7 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
 
     @Test
     public void shouldFailDeleteFlowIfNoFlowFound() {
-        when(flowRepository.findById(eq(FLOW_ID), eq(FetchStrategy.DIRECT_RELATIONS))).thenReturn(Optional.empty());
+        when(flowRepository.findById(eq(FLOW_ID))).thenReturn(Optional.empty());
 
         FlowDeleteService deleteService = new FlowDeleteService(carrier, persistenceManager,
                 flowResourcesManager, TRANSACTION_RETRIES_LIMIT, SPEAKER_COMMAND_RETRIES_LIMIT);
@@ -111,8 +112,8 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         deleteService.handleRequest("test_key", commandContext, FLOW_ID);
 
         verifyZeroInteractions(flowResourcesManager);
-        verify(flowPathRepository, never()).delete(any());
-        verify(flowRepository, never()).delete(any());
+        verify(flowPathRepository, never()).remove(any());
+        verify(flowRepository, never()).remove(any());
         verify(carrier, never()).sendSpeakerRequest(any());
         verify(carrier, times(1)).sendNorthboundResponse(any());
     }
@@ -128,8 +129,8 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         deleteService.handleRequest("test_key", commandContext, FLOW_ID);
 
         verifyZeroInteractions(flowResourcesManager);
-        verify(flowPathRepository, never()).delete(any());
-        verify(flowRepository, never()).delete(any());
+        verify(flowPathRepository, never()).remove(any());
+        verify(flowRepository, never()).remove(any());
         verify(carrier, never()).sendSpeakerRequest(any());
         verify(carrier, times(1)).sendNorthboundResponse(any());
     }
@@ -162,11 +163,11 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
 
         verify(carrier, times(4)).sendSpeakerRequest(any());
         verify(flowPathRepository, times(4)).lockInvolvedSwitches(any(), any());
-        verify(flowPathRepository, never()).delete(any());
+        verify(flowPathRepository, never()).remove(any());
         verify(flowResourcesManager, times(1)).deallocatePathResources(MockitoHamcrest.argThat(
                 Matchers.hasProperty("forward",
                         Matchers.<PathResources>hasProperty("pathId", is(FORWARD_FLOW_PATH)))));
-        verify(flowRepository, times(1)).delete(eq(flow));
+        verify(flowRepository, times(1)).remove(eq(flow));
     }
 
     @Test
@@ -196,14 +197,14 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
 
         // 4 times sending 4 rules = 16 requests.
         verify(carrier, times(16)).sendSpeakerRequest(any());
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(FORWARD_FLOW_PATH))));
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(REVERSE_FLOW_PATH))));
         verify(flowResourcesManager, times(1)).deallocatePathResources(MockitoHamcrest.argThat(
                 Matchers.hasProperty("forward",
                         Matchers.<PathResources>hasProperty("pathId", is(FORWARD_FLOW_PATH)))));
-        verify(flowRepository, times(1)).delete(eq(flow));
+        verify(flowRepository, times(1)).remove(eq(flow));
     }
 
     @Test
@@ -233,14 +234,14 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
 
         // 4 times sending 4 rules = 16 requests.
         verify(carrier, times(16)).sendSpeakerRequest(any());
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(FORWARD_FLOW_PATH))));
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(REVERSE_FLOW_PATH))));
         verify(flowResourcesManager, times(1)).deallocatePathResources(MockitoHamcrest.argThat(
                 Matchers.hasProperty("forward",
                         Matchers.<PathResources>hasProperty("pathId", is(FORWARD_FLOW_PATH)))));
-        verify(flowRepository, times(1)).delete(eq(flow));
+        verify(flowRepository, times(1)).remove(eq(flow));
     }
 
     @Test
@@ -260,8 +261,8 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
 
         verify(carrier, times(4)).sendSpeakerRequest(any());
         verify(flowResourcesManager, never()).deallocatePathResources(any());
-        verify(flowPathRepository, never()).delete(any());
-        verify(flowRepository, never()).delete(any());
+        verify(flowPathRepository, never()).remove(any());
+        verify(flowRepository, never()).remove(any());
     }
 
     @Test
@@ -278,7 +279,7 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         verify(carrier, times(1)).sendNorthboundResponse(any());
 
         doThrow(new RuntimeException("A persistence error"))
-                .when(flowPathRepository).delete(MockitoHamcrest.argThat(
+                .when(flowPathRepository).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(FORWARD_FLOW_PATH))));
 
         FlowSegmentRequest flowRequest;
@@ -296,7 +297,7 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         verify(flowResourcesManager, times(1)).deallocatePathResources(MockitoHamcrest.argThat(
                 Matchers.hasProperty("forward",
                         Matchers.<PathResources>hasProperty("pathId", is(FORWARD_FLOW_PATH)))));
-        verify(flowRepository, times(1)).delete(eq(flow));
+        verify(flowRepository, times(1)).remove(eq(flow));
     }
 
     @Test
@@ -329,14 +330,14 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         }
 
         verify(carrier, times(4)).sendSpeakerRequest(any());
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(FORWARD_FLOW_PATH))));
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(REVERSE_FLOW_PATH))));
         verify(flowResourcesManager, times(1)).deallocatePathResources(MockitoHamcrest.argThat(
                 Matchers.hasProperty("forward",
                         Matchers.<PathResources>hasProperty("pathId", is(FORWARD_FLOW_PATH)))));
-        verify(flowRepository, times(1)).delete(eq(flow));
+        verify(flowRepository, times(1)).remove(eq(flow));
     }
 
     @Test
@@ -353,7 +354,7 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         verify(carrier, times(1)).sendNorthboundResponse(any());
 
         doThrow(new RuntimeException("A persistence error"))
-                .when(flowRepository).delete(eq(flow));
+                .when(flowRepository).remove(eq(flow));
 
         FlowSegmentRequest flowRequest;
         while ((flowRequest = requests.poll()) != null) {
@@ -367,14 +368,14 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         }
 
         verify(carrier, times(4)).sendSpeakerRequest(any());
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(FORWARD_FLOW_PATH))));
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(REVERSE_FLOW_PATH))));
         verify(flowResourcesManager, times(1)).deallocatePathResources(MockitoHamcrest.argThat(
                 Matchers.hasProperty("forward",
                         Matchers.<PathResources>hasProperty("pathId", is(FORWARD_FLOW_PATH)))));
-        verify(flowRepository, times(1)).delete(eq(flow));
+        verify(flowRepository, times(1)).remove(eq(flow));
     }
 
     @Test
@@ -402,14 +403,14 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
         }
 
         verify(carrier, times(4)).sendSpeakerRequest(any());
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(FORWARD_FLOW_PATH))));
-        verify(flowPathRepository, times(1)).delete(MockitoHamcrest.argThat(
+        verify(flowPathRepository, times(1)).remove(MockitoHamcrest.argThat(
                 Matchers.hasProperty("pathId", is(REVERSE_FLOW_PATH))));
         verify(flowResourcesManager, times(1)).deallocatePathResources(MockitoHamcrest.argThat(
                 Matchers.hasProperty("forward",
                         Matchers.<PathResources>hasProperty("pathId", is(FORWARD_FLOW_PATH)))));
-        verify(flowRepository, times(1)).delete(eq(flow));
+        verify(flowRepository, times(1)).remove(eq(flow));
     }
 
     private Flow build2SwitchFlow() {
@@ -424,7 +425,6 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
 
         FlowPath forwardPath = FlowPath.builder()
                 .pathId(FORWARD_FLOW_PATH)
-                .flow(flow)
                 .cookie(Cookie.buildForwardCookie(2))
                 .srcSwitch(src).destSwitch(dst)
                 .status(FlowPathStatus.ACTIVE)
@@ -439,7 +439,6 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
 
         FlowPath reversePath = FlowPath.builder()
                 .pathId(REVERSE_FLOW_PATH)
-                .flow(flow)
                 .cookie(Cookie.buildReverseCookie(2))
                 .srcSwitch(dst).destSwitch(src)
                 .status(FlowPathStatus.ACTIVE)
@@ -452,11 +451,10 @@ public class FlowDeleteServiceTest extends AbstractFlowTest {
                 .build()));
         flow.setReversePath(reversePath);
 
-        SwitchProperties srcSwitchProperties = SwitchProperties.builder().build();
-        SwitchProperties dstSwitchProperties = SwitchProperties.builder().build();
+        SwitchProperties srcSwitchProperties = SwitchProperties.builder().switchObj(src).build();
+        SwitchProperties dstSwitchProperties = SwitchProperties.builder().switchObj(dst).build();
 
         when(flowRepository.findById(any())).thenReturn(Optional.of(flow));
-        when(flowRepository.findById(any(), any())).thenReturn(Optional.of(flow));
         when(switchPropertiesRepository.findBySwitchId(SWITCH_1)).thenReturn(Optional.of(srcSwitchProperties));
         when(switchPropertiesRepository.findBySwitchId(SWITCH_2)).thenReturn(Optional.of(dstSwitchProperties));
 

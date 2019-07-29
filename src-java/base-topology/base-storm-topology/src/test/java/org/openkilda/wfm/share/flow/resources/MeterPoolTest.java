@@ -24,7 +24,7 @@ import org.openkilda.model.MeterId;
 import org.openkilda.model.PathId;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
-import org.openkilda.persistence.Neo4jBasedTest;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 import org.openkilda.persistence.repositories.FlowMeterRepository;
 import org.openkilda.persistence.repositories.SwitchRepository;
 
@@ -33,7 +33,7 @@ import org.junit.Test;
 
 import java.util.Collection;
 
-public class MeterPoolTest extends Neo4jBasedTest {
+public class MeterPoolTest extends InMemoryGraphBasedTest {
     private static final SwitchId SWITCH_ID = new SwitchId("ff:00");
     private static final String FLOW_1 = "flow_1";
     private static final String FLOW_2 = "flow_2";
@@ -47,11 +47,13 @@ public class MeterPoolTest extends Neo4jBasedTest {
 
     @Before
     public void setUp() {
+        cleanTinkerGraph();
+
         meterPool = new MeterPool(persistenceManager, new MeterId(31), new MeterId(40));
 
-        SwitchRepository switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
-        switchRepository.createOrUpdate(Switch.builder().switchId(SWITCH_ID).build());
-        flowMeterRepository = persistenceManager.getRepositoryFactory().createFlowMeterRepository();
+        SwitchRepository switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
+        switchRepository.add(Switch.builder().switchId(SWITCH_ID).build());
+        flowMeterRepository = persistenceManager.getRepositoryFactory().getFlowMeterRepository();
     }
 
     @Test

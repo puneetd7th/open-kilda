@@ -63,8 +63,8 @@ public class FlowValidationService {
 
     public FlowValidationService(PersistenceManager persistenceManager, FlowResourcesConfig flowResourcesConfig,
                                  long flowMeterMinBurstSizeInKbits, double flowMeterBurstCoefficient) {
-        this.switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
-        this.flowRepository = persistenceManager.getRepositoryFactory().createFlowRepository();
+        this.switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
+        this.flowRepository = persistenceManager.getRepositoryFactory().getFlowRepository();
         this.flowResourcesManager = new FlowResourcesManager(persistenceManager, flowResourcesConfig);
         this.flowMeterMinBurstSizeInKbits = flowMeterMinBurstSizeInKbits;
         this.flowMeterBurstCoefficient = flowMeterBurstCoefficient;

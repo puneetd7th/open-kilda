@@ -72,7 +72,7 @@ public class BestWeightAndShortestPathFinderTest {
     private static final SwitchId SWITCH_ID_5 = new SwitchId("00:00:00:00:00:00:00:05");
 
     @Test
-    public void shouldChooseExpensiveOverTooDeep() throws  UnroutableFlowException {
+    public void shouldChooseExpensiveOverTooDeep() throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(2);
@@ -89,7 +89,7 @@ public class BestWeightAndShortestPathFinderTest {
 
     @Test
     public void shouldChooseExpensiveOverTooDeepForReverseOrder()
-            throws  UnroutableFlowException {
+            throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(2);
@@ -105,7 +105,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldChooseDeeperOverExpensive() throws  UnroutableFlowException {
+    public void shouldChooseDeeperOverExpensive() throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(4);
@@ -121,7 +121,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldChooseCheaperWithSameDepth() throws  UnroutableFlowException {
+    public void shouldChooseCheaperWithSameDepth() throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(3);
@@ -137,7 +137,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldChooseCheaperOverTooDeepMaxWeightStrategy() throws  UnroutableFlowException {
+    public void shouldChooseCheaperOverTooDeepMaxWeightStrategy() throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(2);
@@ -154,7 +154,7 @@ public class BestWeightAndShortestPathFinderTest {
 
     @Test
     public void shouldChooseCheaperOverTooDeepForReverseOrderMaxWeightStrategy()
-            throws  UnroutableFlowException {
+            throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(2);
@@ -170,7 +170,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldChooseDeeperOverCheaperMaxWeightStrategy() throws  UnroutableFlowException {
+    public void shouldChooseDeeperOverCheaperMaxWeightStrategy() throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(4);
@@ -186,7 +186,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldChooseExpensiveWithSameDepthMaxWeightStrategy() throws  UnroutableFlowException {
+    public void shouldChooseExpensiveWithSameDepthMaxWeightStrategy() throws UnroutableFlowException {
         AvailableNetwork network = buildLongAndExpensivePathsNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(3);
@@ -239,7 +239,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldReturnTheShortestPath() throws  UnroutableFlowException {
+    public void shouldReturnTheShortestPath() throws UnroutableFlowException {
         AvailableNetwork network = buildTestNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(ALLOWED_DEPTH);
@@ -260,7 +260,7 @@ public class BestWeightAndShortestPathFinderTest {
      * System picks path closest to maxWeight. Omit too cheap path, omit equal to maxWeight path
      */
     @Test
-    public void shouldReturnThePathClosestToMaxWeight() throws  UnroutableFlowException {
+    public void shouldReturnThePathClosestToMaxWeight() throws UnroutableFlowException {
         //given 3 paths that cost: 198, 200, 201
         AvailableNetwork network = buildThreePathsNetwork();
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(ALLOWED_DEPTH);
@@ -278,7 +278,7 @@ public class BestWeightAndShortestPathFinderTest {
      * closer than the one from the bottom
      */
     @Test
-    public void shouldReturnThePathBottomClosestToMaxWeight() throws  UnroutableFlowException {
+    public void shouldReturnThePathBottomClosestToMaxWeight() throws UnroutableFlowException {
         //given 3 paths that cost: 198, 200, 201
         AvailableNetwork network = buildThreePathsNetwork();
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(ALLOWED_DEPTH);
@@ -338,7 +338,7 @@ public class BestWeightAndShortestPathFinderTest {
      * Fail to find a path if all available paths cost more or equal to maxWeight.
      */
     @Test(expected = UnroutableFlowException.class)
-    public void shouldFailIfNoPathLessThanMaxWeight() throws  UnroutableFlowException {
+    public void shouldFailIfNoPathLessThanMaxWeight() throws UnroutableFlowException {
         //given 3 paths that cost: 198, 200, 201
         AvailableNetwork network = buildThreePathsNetwork();
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(ALLOWED_DEPTH);
@@ -348,7 +348,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test(expected = UnroutableFlowException.class)
-    public void failToFindASwitch() throws  UnroutableFlowException {
+    public void failToFindASwitch() throws UnroutableFlowException {
         AvailableNetwork network = buildTestNetwork();
 
         SwitchId srcDpid = new SwitchId("00:00:00:00:00:00:00:ff");
@@ -358,7 +358,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test(expected = UnroutableFlowException.class)
-    public void failToFindASwitchMaxWeightStrategy() throws  UnroutableFlowException {
+    public void failToFindASwitchMaxWeightStrategy() throws UnroutableFlowException {
         AvailableNetwork network = buildTestNetwork();
 
         SwitchId srcDpid = new SwitchId("00:00:00:00:00:00:00:ff");
@@ -465,7 +465,7 @@ public class BestWeightAndShortestPathFinderTest {
 
     @Test
     public void testForwardAndBackwardPathsEqualityEvenWhenReverseHasCheaperPath()
-            throws  UnroutableFlowException {
+            throws UnroutableFlowException {
         // since our ISLs are bidirectional and cost may vary, we need to be sure that cost on reverse ISL won't be
         // taken into account during searching of reverse path.
         AvailableNetwork network = buildNetworkWithCostInReversePathBiggerThanForward();
@@ -480,7 +480,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldCreatePathThrowMoreExpensiveWayMaxLatencyStrategy() throws  UnroutableFlowException {
+    public void shouldCreatePathThrowMoreExpensiveWayMaxLatencyStrategy() throws UnroutableFlowException {
         // Reverse way is more expansive then forward, so we must choose this path
         // and the sequence of switches must match the forward path.
         AvailableNetwork network = buildNetworkWithCostInReversePathBiggerThanForward();
@@ -525,7 +525,7 @@ public class BestWeightAndShortestPathFinderTest {
 
 
     @Test
-    public void shouldHandleVeryExpensiveLinks() throws  UnroutableFlowException {
+    public void shouldHandleVeryExpensiveLinks() throws UnroutableFlowException {
         AvailableNetwork network = buildExpensiveNetwork();
 
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(ALLOWED_DEPTH);
@@ -650,7 +650,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldBuildPathDependsOnIslConfig() throws  UnroutableFlowException {
+    public void shouldBuildPathDependsOnIslConfig() throws UnroutableFlowException {
         // Network without unstable and under maintenance links.
         AvailableNetwork network = buildTestNetworkForVerifyIslConfig(false, false);
 
@@ -739,7 +739,7 @@ public class BestWeightAndShortestPathFinderTest {
     }
 
     @Test
-    public void shouldFindNPath() throws  UnroutableFlowException {
+    public void shouldFindNPath() throws UnroutableFlowException {
         AvailableNetwork network = buildTestNetworkForTestYensAlgorithm();
         BestWeightAndShortestPathFinder pathFinder = new BestWeightAndShortestPathFinder(ALLOWED_DEPTH);
         List<List<SwitchId>> expectedPaths = new ArrayList<>();

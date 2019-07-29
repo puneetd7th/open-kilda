@@ -41,7 +41,6 @@ import org.openkilda.messaging.nbtopology.response.SwitchConnectedDevicesRespons
 import org.openkilda.messaging.nbtopology.response.SwitchPortConnectedDevicesDto;
 import org.openkilda.messaging.nbtopology.response.SwitchPropertiesResponse;
 import org.openkilda.messaging.payload.switches.PortPropertiesPayload;
-import org.openkilda.model.FeatureToggles;
 import org.openkilda.model.IslEndpoint;
 import org.openkilda.model.PortProperties;
 import org.openkilda.model.Switch;
@@ -101,7 +100,7 @@ public class SwitchOperationsBolt extends PersistenceOperationsBolt implements I
                 new SwitchOperationsService(repositoryFactory, transactionManager, this);
         this.flowOperationsService = new FlowOperationsService(repositoryFactory, transactionManager);
 
-        featureTogglesRepository = repositoryFactory.createFeatureTogglesRepository();
+        featureTogglesRepository = repositoryFactory.getFeatureTogglesRepository();
     }
 
     @Override
@@ -159,9 +158,7 @@ public class SwitchOperationsBolt extends PersistenceOperationsBolt implements I
         }
 
         if (underMaintenance && evacuate) {
-            boolean flowsRerouteViaFlowHs = featureTogglesRepository.find()
-                    .map(FeatureToggles::getFlowsRerouteViaFlowHs)
-                    .orElse(FeatureToggles.DEFAULTS.getFlowsRerouteViaFlowHs());
+            boolean flowsRerouteViaFlowHs = featureTogglesRepository.getOrDefault().getFlowsRerouteViaFlowHs();
             String streamId = flowsRerouteViaFlowHs ? StreamType.FLOWHS.toString() : StreamType.REROUTE.toString();
 
             Set<IslEndpoint> affectedIslEndpoint = new HashSet<>(

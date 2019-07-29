@@ -157,13 +157,13 @@ public class RemoveRulesAction extends BaseFlowRuleRemovalAction<FlowDeleteFsm, 
 
     private boolean isRemoveCustomerPortSharedCatchRule(Flow flow, FlowPath path) {
         boolean isForward = flow.isForward(path);
-        return isRemoveCustomerPortSharedCatchRule(flow.getFlowId(), path.getSrcSwitch().getSwitchId(),
+        return isRemoveCustomerPortSharedCatchRule(flow.getFlowId(), path.getSrcSwitchId(),
                 isForward ? flow.getSrcPort() : flow.getDestPort());
     }
 
     private boolean isRemoveCustomerPortSharedLldpCatchRule(Flow flow, FlowPath path) {
         boolean isForward = flow.isForward(path);
-        return isFlowTheLastUserOfSharedLldpPortRule(flow.getFlowId(), path.getSrcSwitch().getSwitchId(),
+        return isFlowTheLastUserOfSharedLldpPortRule(flow.getFlowId(), path.getSrcSwitchId(),
                 isForward ? flow.getSrcPort() : flow.getDestPort());
     }
 }

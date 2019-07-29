@@ -112,7 +112,7 @@ public final class PortFsm extends AbstractBaseFsm<PortFsm, PortFsmState, PortFs
         private final PortPropertiesRepository portPropertiesRepository;
 
         PortFsmFactory(PersistenceManager persistenceManager) {
-            portPropertiesRepository = persistenceManager.getRepositoryFactory().createPortPropertiesRepository();
+            portPropertiesRepository = persistenceManager.getRepositoryFactory().getPortPropertiesRepository();
 
             builder = StateMachineBuilderFactory.create(
                     PortFsm.class, PortFsmState.class, PortFsmEvent.class, PortFsmContext.class,

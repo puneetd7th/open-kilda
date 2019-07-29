@@ -23,27 +23,29 @@ import org.openkilda.model.Flow;
 import org.openkilda.model.PathId;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
-import org.openkilda.persistence.Neo4jBasedTest;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 import org.openkilda.persistence.repositories.SwitchRepository;
 import org.openkilda.wfm.share.flow.resources.ResourceNotAvailableException;
 
 import org.junit.Before;
 import org.junit.Test;
 
-public class VxlanPoolTest extends Neo4jBasedTest {
+public class VxlanPoolTest extends InMemoryGraphBasedTest {
 
     private VxlanPool vxlanPool;
 
-    private Switch switch1 = Switch.builder().switchId(new SwitchId("ff:00")).build();
-    private Switch switch2 = Switch.builder().switchId(new SwitchId("ff:01")).build();
+    private Switch switch1;
+    private Switch switch2;
 
     @Before
     public void setUp() {
+        cleanTinkerGraph();
+
         vxlanPool = new VxlanPool(persistenceManager, 100, 110);
 
-        SwitchRepository switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
-        switchRepository.createOrUpdate(switch1);
-        switchRepository.createOrUpdate(switch2);
+        SwitchRepository switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
+        switch1 = switchRepository.add(Switch.builder().switchId(new SwitchId("ff:00")).build());
+        switch2 = switchRepository.add(Switch.builder().switchId(new SwitchId("ff:01")).build());
     }
 
     @Test

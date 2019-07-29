@@ -29,10 +29,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.openkilda.northbound.controller.NorthboundBaseTest;
 import org.openkilda.northbound.controller.TestConfig;
 import org.openkilda.northbound.utils.RequestCorrelationFilter;
 import org.openkilda.northbound.utils.RequestCorrelationInspectorFilter;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = TestConfig.class)
-public class SwitchControllerTest extends NorthboundBaseTest {
+public class SwitchControllerTest extends InMemoryGraphBasedTest {
 
     private static final String USERNAME = "kilda";
     private static final String PASSWORD = "kilda";
@@ -66,6 +66,8 @@ public class SwitchControllerTest extends NorthboundBaseTest {
 
     @Before
     public void setUp() throws Exception {
+        cleanTinkerGraph();
+
         this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .addFilters(new RequestCorrelationInspectorFilter(), new RequestCorrelationFilter())
                 .apply(springSecurity())

@@ -15,56 +15,103 @@
 
 package org.openkilda.model.history;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import org.openkilda.model.CompositeDataEntity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.Index;
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
-import org.neo4j.ogm.typeconversion.InstantStringConverter;
+import lombok.NonNull;
+import lombok.experimental.Delegate;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.factory.Mappers;
 
+import java.io.Serializable;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Represents information about the flow event.
  * The event has an actor and represents actions from outside of Kilda.
  */
-@Data
-@NoArgsConstructor
-@EqualsAndHashCode(exclude = "entityId")
-@NodeEntity(label = "flow_event")
-@Builder
-@AllArgsConstructor
-public class FlowEvent {
+public class FlowEvent implements CompositeDataEntity<FlowEvent.FlowEventData> {
+    @Getter
+    @Delegate
+    @JsonIgnore
+    private FlowEventData data;
 
-    // Hidden as needed for OGM only.
-    @Id
-    @GeneratedValue
-    @Setter(AccessLevel.NONE)
-    @Getter(AccessLevel.NONE)
-    private Long entityId;
+    public FlowEvent() {
+        data = new FlowEventDataImpl();
+    }
 
-    @Property(name = "flow_id")
-    private String flowId;
+    public FlowEvent(@NonNull FlowEventData data) {
+        this.data = data;
+    }
 
-    @Convert(InstantStringConverter.class)
-    private Instant timestamp;
+    /**
+     * Defines persistable data of the FlowEvent.
+     */
+    public interface FlowEventData {
+        String getFlowId();
 
-    private String actor;
+        void setFlowId(String flowId);
 
-    private String action;
+        Instant getTimestamp();
 
-    @Index(unique = true)
-    @Property(name = "task_id")
-    private String taskId;
+        void setTimestamp(Instant timestamp);
 
-    private String details;
+        String getActor();
+
+        void setActor(String actor);
+
+        String getAction();
+
+        void setAction(String action);
+
+        String getTaskId();
+
+        void setTaskId(String taskId);
+
+        String getDetails();
+
+        void setDetails(String details);
+
+        Collection<FlowHistory> getHistoryRecords();
+
+        Collection<FlowDump> getFlowDumps();
+    }
+
+    /**
+     * POJO implementation of FlowEventData.
+     */
+    @Data
+    @NoArgsConstructor
+    final class FlowEventDataImpl implements FlowEventData, Serializable {
+        private static final long serialVersionUID = 1L;
+        String flowId;
+        Instant timestamp;
+        String actor;
+        String action;
+        String taskId;
+        String details;
+
+        @Override
+        public Collection<FlowHistory> getHistoryRecords() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public Collection<FlowDump> getFlowDumps() {
+            return Collections.emptyList();
+        }
+    }
+
+    @Mapper
+    public interface FlowEventCloner {
+        FlowEventCloner INSTANCE = Mappers.getMapper(FlowEventCloner.class);
+
+        void copy(FlowEventData source, @MappingTarget FlowEventData target);
+    }
 }

@@ -72,16 +72,16 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
     public SwitchOperationsService(RepositoryFactory repositoryFactory,
                                    TransactionManager transactionManager,
                                    SwitchOperationsServiceCarrier carrier) {
-        this.switchRepository = repositoryFactory.createSwitchRepository();
+        this.switchRepository = repositoryFactory.getSwitchRepository();
         this.transactionManager = transactionManager;
         this.linkOperationsService
                 = new LinkOperationsService(this, repositoryFactory, transactionManager);
-        this.islRepository = repositoryFactory.createIslRepository();
-        this.flowRepository = repositoryFactory.createFlowRepository();
-        this.flowPathRepository = repositoryFactory.createFlowPathRepository();
-        this.switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
-        this.portPropertiesRepository = repositoryFactory.createPortPropertiesRepository();
-        this.switchConnectedDeviceRepository = repositoryFactory.createSwitchConnectedDeviceRepository();
+        this.islRepository = repositoryFactory.getIslRepository();
+        this.flowRepository = repositoryFactory.getFlowRepository();
+        this.flowPathRepository = repositoryFactory.getFlowPathRepository();
+        this.switchPropertiesRepository = repositoryFactory.getSwitchPropertiesRepository();
+        this.portPropertiesRepository = repositoryFactory.getPortPropertiesRepository();
+        this.switchConnectedDeviceRepository = repositoryFactory.getSwitchConnectedDeviceRepository();
         this.carrier = carrier;
     }
 
@@ -130,15 +130,13 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
 
             sw.setUnderMaintenance(underMaintenance);
 
-            switchRepository.createOrUpdate(sw);
-
             linkOperationsService.getAllIsls(switchId, null, null, null)
                     .forEach(isl -> {
                         try {
                             linkOperationsService.updateLinkUnderMaintenanceFlag(
-                                    isl.getSrcSwitch().getSwitchId(),
+                                    isl.getSrcSwitchId(),
                                     isl.getSrcPort(),
-                                    isl.getDestSwitch().getSwitchId(),
+                                    isl.getDestSwitchId(),
                                     isl.getDestPort(),
                                     underMaintenance);
                         } catch (IslNotFoundException e) {
@@ -165,15 +163,16 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
 
         transactionManager.doInTransaction(() -> {
             switchPropertiesRepository.findBySwitchId(sw.getSwitchId())
-                    .ifPresent(sp -> switchPropertiesRepository.delete(sp));
+                    .ifPresent(sp -> switchPropertiesRepository.remove(sp));
             portPropertiesRepository.getAllBySwitchId(sw.getSwitchId())
-                    .forEach(portPropertiesRepository::delete);
+                    .forEach(portPropertiesRepository::remove);
             if (force) {
-                // forceDelete() removes switch along with all relationships.
-                switchRepository.forceDelete(sw.getSwitchId());
+                // remove() removes switch along with all relationships.
+                switchRepository.remove(sw);
             } else {
-                // delete() is used to be sure that we wouldn't delete switch if it has even one relationship.
-                switchRepository.delete(sw);
+                // removeIfNoDependant() is used to be sure that we wouldn't delete switch
+                // if it has even one relationship.
+                switchRepository.removeIfNoDependant(sw);
             }
         });
 
@@ -283,8 +282,12 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
         if (isEmpty(switchPropertiesDto.getSupportedTransitEncapsulation())) {
             throw new IllegalSwitchPropertiesException("Supported transit encapsulations should not be null or empty");
         }
-        SwitchProperties update = SwitchPropertiesMapper.INSTANCE.map(switchPropertiesDto);
         return transactionManager.doInTransaction(() -> {
+            Switch sw = switchRepository.findById(switchId)
+                    .orElseThrow(() -> new SwitchPropertiesNotFoundException(switchId));
+
+            SwitchProperties update = SwitchPropertiesMapper.INSTANCE.map(switchPropertiesDto, sw);
+
             SwitchProperties switchProperties = switchPropertiesRepository.findBySwitchId(switchId)
                     .orElseThrow(() -> new SwitchPropertiesNotFoundException(switchId));
 
@@ -298,7 +301,6 @@ public class SwitchOperationsService implements ILinkOperationsServiceCarrier {
             switchProperties.setSwitchArp(update.isSwitchArp());
             switchProperties.setSupportedTransitEncapsulation(update.getSupportedTransitEncapsulation());
 
-            switchPropertiesRepository.createOrUpdate(switchProperties);
             if (isSwitchSyncNeeded) {
                 carrier.requestSwitchSync(switchId);
             }

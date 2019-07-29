@@ -91,9 +91,9 @@ public class FlowValidatorTest {
                 .thenReturn(singletonList(flow));
 
         RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
-        when(repositoryFactory.createSwitchRepository()).thenReturn(switchRepository);
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
-        when(repositoryFactory.createIslRepository()).thenReturn(islRepository);
+        when(repositoryFactory.getSwitchRepository()).thenReturn(switchRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getIslRepository()).thenReturn(islRepository);
 
         target = new FlowValidator(repositoryFactory);
     }
@@ -104,7 +104,7 @@ public class FlowValidatorTest {
         when(switchRepository.exists(eq(dstSwitchId))).thenReturn(true);
 
         RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
-        when(repositoryFactory.createSwitchRepository()).thenReturn(switchRepository);
+        when(repositoryFactory.getSwitchRepository()).thenReturn(switchRepository);
         target = new FlowValidator(repositoryFactory);
     }
 
@@ -118,8 +118,10 @@ public class FlowValidatorTest {
                 .features(dstLldpSupport ? newHashSet(MULTI_TABLE) : Sets.newHashSet())
                 .build();
 
-        SwitchProperties srcProperties = SwitchProperties.builder().multiTable(srcLldpSupport).build();
-        SwitchProperties dstProperties = SwitchProperties.builder().multiTable(dstLldpSupport).build();
+        SwitchProperties srcProperties = SwitchProperties.builder()
+                .switchObj(srcSwitch).multiTable(srcLldpSupport).build();
+        SwitchProperties dstProperties = SwitchProperties.builder()
+                .switchObj(dstSwitch).multiTable(dstLldpSupport).build();
 
         SwitchRepository switchRepository = mock(SwitchRepository.class);
         when(switchRepository.findById(eq(FlowValidatorTest.SRC_SWITCH_ID))).thenReturn(Optional.of(srcSwitch));
@@ -132,8 +134,8 @@ public class FlowValidatorTest {
         when(switchPropertiesRepository.findBySwitchId(eq(DST_SWITCH_ID))).thenReturn(Optional.of(dstProperties));
 
         RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
-        when(repositoryFactory.createSwitchRepository()).thenReturn(switchRepository);
-        when(repositoryFactory.createSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
+        when(repositoryFactory.getSwitchRepository()).thenReturn(switchRepository);
+        when(repositoryFactory.getSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
         target = new FlowValidator(repositoryFactory);
     }
 

@@ -77,7 +77,7 @@ public class BfdGlobalToggleFsm
                 BfdGlobalToggleFsmContext> builder;
 
         BfdGlobalToggleFsmFactory(PersistenceManager persistenceManager) {
-            featureTogglesRepository = persistenceManager.getRepositoryFactory().createFeatureTogglesRepository();
+            featureTogglesRepository = persistenceManager.getRepositoryFactory().getFeatureTogglesRepository();
 
             builder = StateMachineBuilderFactory.create(
                     BfdGlobalToggleFsm.class, BfdGlobalToggleFsmState.class, BfdGlobalToggleFsmEvent.class,

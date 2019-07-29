@@ -15,95 +15,187 @@
 
 package org.openkilda.model;
 
-import lombok.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.experimental.Delegate;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.factory.Mappers;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder(toBuilder = true)
-@EqualsAndHashCode(exclude = "entityId")
-@NodeEntity(label = "config")
-public class FeatureToggles {
+import java.io.Serializable;
 
-    public static final FeatureToggles DEFAULTS = new FeatureToggles(
-            null,  // ID
-            false, // flows_reroute_on_isl_discovery
-            false, // create_flow
-            false, // update_flow
-            false, // delete_flow
-            false, // push_flow
-            false, // unpush_flow
-            true, // use_bfd_for_isl_integrity_check
-            true, // floodlight_router_periodic_sync
-            false, // flows_reroute_via_flowhs
-            false // flows_reroute_using_default_encap_type
-    );
+@ToString
+public class FeatureToggles implements CompositeDataEntity<FeatureToggles.FeatureTogglesData> {
+    public static final FeatureToggles DEFAULTS = FeatureToggles.builder()
+            .flowsRerouteOnIslDiscoveryEnabled(false)
+            .createFlowEnabled(false)
+            .updateFlowEnabled(false)
+            .deleteFlowEnabled(false)
+            .pushFlowEnabled(false)
+            .unpushFlowEnabled(false)
+            .useBfdForIslIntegrityCheck(true)
+            .floodlightRoutePeriodicSync(true)
+            .flowsRerouteViaFlowHs(false)
+            .flowsRerouteUsingDefaultEncapType(false)
+            .build();
 
-    // Hidden as needed for OGM only.
-    @Id
-    @GeneratedValue
-    @Setter(AccessLevel.NONE)
-    @Getter(AccessLevel.NONE)
-    private Long entityId;
-
-    @Property(name = "flows_reroute_on_isl_discovery")
-    private Boolean flowsRerouteOnIslDiscoveryEnabled;
-
-    @Property(name = "create_flow")
-    private Boolean createFlowEnabled;
-
-    @Property(name = "update_flow")
-    private Boolean updateFlowEnabled;
-
-    @Property(name = "delete_flow")
-    private Boolean deleteFlowEnabled;
-
-    @Property(name = "push_flow")
-    private Boolean pushFlowEnabled;
-
-    @Property(name = "unpush_flow")
-    private Boolean unpushFlowEnabled;
-
-    @Property(name = "use_bfd_for_isl_integrity_check")
-    private Boolean useBfdForIslIntegrityCheck;
-
-    @Property(name = "floodlight_router_periodic_sync")
-    private Boolean floodlightRoutePeriodicSync;
-
-    @Property(name = "flows_reroute_via_flowhs")
-    private Boolean flowsRerouteViaFlowHs;
-
-    @Property(name = "flows_reroute_using_default_encap_type")
-    private Boolean flowsRerouteUsingDefaultEncapType;
+    @Getter
+    @Delegate
+    @JsonIgnore
+    private FeatureTogglesData data;
 
     /**
-     * Constructor prevents initialization of entityId field.
+     * No args constructor for deserialization purpose.
      */
-    @Builder(toBuilder = true)
-    FeatureToggles(Boolean flowsRerouteOnIslDiscoveryEnabled, Boolean createFlowEnabled, Boolean updateFlowEnabled,
-                   Boolean deleteFlowEnabled, Boolean pushFlowEnabled, Boolean unpushFlowEnabled,
-                   Boolean useBfdForIslIntegrityCheck, Boolean floodlightRoutePeriodicSync,
-                   Boolean flowsRerouteViaFlowHs, Boolean flowsRerouteUsingDefaultEncapType) {
-        this.flowsRerouteOnIslDiscoveryEnabled = flowsRerouteOnIslDiscoveryEnabled;
-        this.createFlowEnabled = createFlowEnabled;
-        this.updateFlowEnabled = updateFlowEnabled;
-        this.deleteFlowEnabled = deleteFlowEnabled;
-        this.pushFlowEnabled = pushFlowEnabled;
-        this.unpushFlowEnabled = unpushFlowEnabled;
-        this.useBfdForIslIntegrityCheck = useBfdForIslIntegrityCheck;
-        this.floodlightRoutePeriodicSync = floodlightRoutePeriodicSync;
-        this.flowsRerouteViaFlowHs = flowsRerouteViaFlowHs;
-        this.flowsRerouteUsingDefaultEncapType = flowsRerouteUsingDefaultEncapType;
+    private FeatureToggles() {
+        data = new FeatureTogglesDataImpl();
+    }
+
+    public FeatureToggles(@NonNull FeatureToggles entityToClone) {
+        this();
+        FeatureTogglesCloner.INSTANCE.copy(entityToClone.getData(), data);
+    }
+
+    @Builder
+    public FeatureToggles(Boolean flowsRerouteOnIslDiscoveryEnabled, Boolean createFlowEnabled,
+                          Boolean updateFlowEnabled, Boolean deleteFlowEnabled, Boolean pushFlowEnabled,
+                          Boolean unpushFlowEnabled, Boolean useBfdForIslIntegrityCheck,
+                          Boolean floodlightRoutePeriodicSync, Boolean flowsRerouteViaFlowHs,
+                          Boolean flowsRerouteUsingDefaultEncapType) {
+        data = FeatureTogglesDataImpl.builder()
+                .flowsRerouteOnIslDiscoveryEnabled(flowsRerouteOnIslDiscoveryEnabled)
+                .createFlowEnabled(createFlowEnabled).updateFlowEnabled(updateFlowEnabled)
+                .deleteFlowEnabled(deleteFlowEnabled).pushFlowEnabled(pushFlowEnabled)
+                .unpushFlowEnabled(unpushFlowEnabled).useBfdForIslIntegrityCheck(useBfdForIslIntegrityCheck)
+                .floodlightRoutePeriodicSync(floodlightRoutePeriodicSync).flowsRerouteViaFlowHs(flowsRerouteViaFlowHs)
+                .flowsRerouteUsingDefaultEncapType(flowsRerouteUsingDefaultEncapType)
+                .build();
+    }
+
+    public FeatureToggles(@NonNull FeatureTogglesData data) {
+        this.data = data;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        FeatureToggles that = (FeatureToggles) o;
+        return new EqualsBuilder()
+                .append(getFlowsRerouteOnIslDiscoveryEnabled(), that.getFlowsRerouteOnIslDiscoveryEnabled())
+                .append(getCreateFlowEnabled(), that.getCreateFlowEnabled())
+                .append(getUpdateFlowEnabled(), that.getUpdateFlowEnabled())
+                .append(getDeleteFlowEnabled(), that.getDeleteFlowEnabled())
+                .append(getPushFlowEnabled(), that.getPushFlowEnabled())
+                .append(getUnpushFlowEnabled(), that.getUnpushFlowEnabled())
+                .append(getUseBfdForIslIntegrityCheck(), that.getUseBfdForIslIntegrityCheck())
+                .append(getFloodlightRoutePeriodicSync(), that.getFloodlightRoutePeriodicSync())
+                .append(getFlowsRerouteViaFlowHs(), that.getFlowsRerouteViaFlowHs())
+                .append(getFlowsRerouteUsingDefaultEncapType(), that.getFlowsRerouteUsingDefaultEncapType())
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(getFlowsRerouteOnIslDiscoveryEnabled())
+                .append(getCreateFlowEnabled())
+                .append(getUpdateFlowEnabled())
+                .append(getDeleteFlowEnabled())
+                .append(getPushFlowEnabled())
+                .append(getUnpushFlowEnabled())
+                .append(getUseBfdForIslIntegrityCheck())
+                .append(getFloodlightRoutePeriodicSync())
+                .append(getFlowsRerouteViaFlowHs())
+                .append(getFlowsRerouteUsingDefaultEncapType())
+                .toHashCode();
+    }
+
+    /**
+     * Defines persistable data of the FeatureToggles.
+     */
+    public interface FeatureTogglesData {
+        Boolean getFlowsRerouteOnIslDiscoveryEnabled();
+
+        void setFlowsRerouteOnIslDiscoveryEnabled(Boolean flowsRerouteOnIslDiscoveryEnabled);
+
+        Boolean getCreateFlowEnabled();
+
+        void setCreateFlowEnabled(Boolean createFlowEnabled);
+
+        Boolean getUpdateFlowEnabled();
+
+        void setUpdateFlowEnabled(Boolean updateFlowEnabled);
+
+        Boolean getDeleteFlowEnabled();
+
+        void setDeleteFlowEnabled(Boolean deleteFlowEnabled);
+
+        Boolean getPushFlowEnabled();
+
+        void setPushFlowEnabled(Boolean pushFlowEnabled);
+
+        Boolean getUnpushFlowEnabled();
+
+        void setUnpushFlowEnabled(Boolean unpushFlowEnabled);
+
+        Boolean getUseBfdForIslIntegrityCheck();
+
+        void setUseBfdForIslIntegrityCheck(Boolean useBfdForIslIntegrityCheck);
+
+        Boolean getFloodlightRoutePeriodicSync();
+
+        void setFloodlightRoutePeriodicSync(Boolean floodlightRoutePeriodicSync);
+
+        Boolean getFlowsRerouteViaFlowHs();
+
+        void setFlowsRerouteViaFlowHs(Boolean flowsRerouteViaFlowHs);
+
+        Boolean getFlowsRerouteUsingDefaultEncapType();
+
+        void setFlowsRerouteUsingDefaultEncapType(Boolean flowsRerouteUsingDefaultEncapType);
+    }
+
+    /**
+     * POJO implementation of FeatureTogglesData.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static final class FeatureTogglesDataImpl implements FeatureTogglesData, Serializable {
+        private static final long serialVersionUID = 1L;
+        Boolean flowsRerouteOnIslDiscoveryEnabled;
+        Boolean createFlowEnabled;
+        Boolean updateFlowEnabled;
+        Boolean deleteFlowEnabled;
+        Boolean pushFlowEnabled;
+        Boolean unpushFlowEnabled;
+        Boolean useBfdForIslIntegrityCheck;
+        Boolean floodlightRoutePeriodicSync;
+        Boolean flowsRerouteViaFlowHs;
+        Boolean flowsRerouteUsingDefaultEncapType;
+    }
+
+    /**
+     * A cloner for FeatureToggles entity.
+     */
+    @Mapper
+    public interface FeatureTogglesCloner {
+        FeatureTogglesCloner INSTANCE = Mappers.getMapper(FeatureTogglesCloner.class);
+
+        void copy(FeatureTogglesData source, @MappingTarget FeatureTogglesData target);
     }
 }

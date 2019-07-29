@@ -22,7 +22,6 @@ import static org.openkilda.model.Cookie.LLDP_POST_INGRESS_COOKIE;
 import static org.openkilda.model.Cookie.LLDP_POST_INGRESS_ONE_SWITCH_COOKIE;
 import static org.openkilda.model.Cookie.LLDP_POST_INGRESS_VXLAN_COOKIE;
 import static org.openkilda.model.Cookie.LLDP_TRANSIT_COOKIE;
-import static org.openkilda.persistence.FetchStrategy.DIRECT_RELATIONS;
 
 import org.openkilda.messaging.info.event.SwitchLldpInfoData;
 import org.openkilda.model.Flow;
@@ -56,11 +55,11 @@ public class PacketService {
 
     public PacketService(PersistenceManager persistenceManager) {
         transactionManager = persistenceManager.getTransactionManager();
-        switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
+        switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
         switchConnectedDeviceRepository = persistenceManager.getRepositoryFactory()
-                .createSwitchConnectedDeviceRepository();
-        transitVlanRepository = persistenceManager.getRepositoryFactory().createTransitVlanRepository();
-        flowRepository = persistenceManager.getRepositoryFactory().createFlowRepository();
+                .getSwitchConnectedDeviceRepository();
+        transitVlanRepository = persistenceManager.getRepositoryFactory().getTransitVlanRepository();
+        flowRepository = persistenceManager.getRepositoryFactory().getFlowRepository();
     }
 
     /**
@@ -89,8 +88,6 @@ public class PacketService {
             device.setTimeLastSeen(Instant.ofEpochMilli(data.getTimestamp()));
             device.setFlowId(flowRelatedData.flowId);
             device.setSource(flowRelatedData.source);
-
-            switchConnectedDeviceRepository.createOrUpdate(device);
         });
     }
 
@@ -126,7 +123,7 @@ public class PacketService {
         }
 
         int customerVlan = data.getVlans().size() > 1 ? data.getVlans().get(1) : 0;
-        if (data.getSwitchId().equals(flow.getSrcSwitch().getSwitchId())) {
+        if (data.getSwitchId().equals(flow.getSrcSwitchId())) {
             if (flow.getSrcVlan() == FULL_PORT_VLAN) {
                 // case 1:  customer vlan 0 ==> src vlan 0, transit vlan 2 ==> output vlan 2, vlans in packet: [2]
                 // case 2:  customer vlan 1 ==> src vlan 0, transit vlan 2 ==> output vlan 2, vlans in packet: [2, 1]
@@ -135,7 +132,7 @@ public class PacketService {
                 // case 1:  customer vlan 1 ==> src vlan 1, transit vlan 2 ==> output vlan 2, vlans in packet: [2]
                 return new FlowRelatedData(flow.getSrcVlan(), flow.getFlowId(), true);
             }
-        } else if (data.getSwitchId().equals(flow.getDestSwitch().getSwitchId())) {
+        } else if (data.getSwitchId().equals(flow.getDestSwitchId())) {
             if (flow.getDestVlan() == FULL_PORT_VLAN) {
                 // case 1:  customer vlan 0 ==> dst vlan 0, transit vlan 2 ==> output vlan 2, vlans in packet: [2]
                 // case 2:  customer vlan 1 ==> dst vlan 0, transit vlan 2 ==> output vlan 2, vlans in packet: [2, 1]
@@ -160,9 +157,9 @@ public class PacketService {
             return null;
         }
 
-        if (data.getSwitchId().equals(flow.getSrcSwitch().getSwitchId())) {
+        if (data.getSwitchId().equals(flow.getSrcSwitchId())) {
             return new FlowRelatedData(inputVlan, flow.getFlowId(), true);
-        } else if (data.getSwitchId().equals(flow.getDestSwitch().getSwitchId())) {
+        } else if (data.getSwitchId().equals(flow.getDestSwitchId())) {
             return new FlowRelatedData(inputVlan, flow.getFlowId(), false);
         } else {
             log.warn("Got LLDP packet from Flow {} on non-src/non-dst switch {}. Port number {}, input vlan {}",
@@ -263,7 +260,7 @@ public class PacketService {
             log.info("Couldn't find flow encapsulation resources by Transit vlan '{}", vlan);
             return null;
         }
-        Optional<Flow> flow = flowRepository.findById(transitVlan.get().getFlowId(), DIRECT_RELATIONS);
+        Optional<Flow> flow = flowRepository.findById(transitVlan.get().getFlowId());
         if (!flow.isPresent()) {
             log.warn("Couldn't find flow by flow ID '{}", transitVlan.get().getFlowId());
             return null;
@@ -327,7 +324,7 @@ public class PacketService {
             return null;
         }
 
-        return SwitchConnectedDevice.builder()
+        return switchConnectedDeviceRepository.add(SwitchConnectedDevice.builder()
                 .switchObj(sw.get())
                 .portNumber(data.getPortNumber())
                 .vlan(vlan)
@@ -336,7 +333,7 @@ public class PacketService {
                 .chassisId(data.getChassisId())
                 .portId(data.getPortId())
                 .timeFirstSeen(Instant.ofEpochMilli(data.getTimestamp()))
-                .build();
+                .build());
     }
 
     @Value

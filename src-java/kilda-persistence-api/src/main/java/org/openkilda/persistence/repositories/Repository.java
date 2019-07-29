@@ -15,12 +15,8 @@
 
 package org.openkilda.persistence.repositories;
 
-import java.util.Collection;
+public interface Repository<E> {
+    E add(E entity);
 
-public interface Repository<T> {
-    Collection<T> findAll();
-
-    void createOrUpdate(T entity);
-
-    void delete(T entity);
+    void remove(E entity);
 }

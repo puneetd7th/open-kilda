@@ -15,58 +15,118 @@
 
 package org.openkilda.model;
 
-import lombok.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.experimental.Delegate;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.factory.Mappers;
 
-@Data
-@NoArgsConstructor
-@EqualsAndHashCode(exclude = "entityId")
-@NodeEntity(label = "kilda_configuration")
-public class KildaConfiguration {
+import java.io.Serializable;
 
-    public static final KildaConfiguration DEFAULTS = KildaConfiguration.builder()
+@ToString
+public class KildaConfiguration implements CompositeDataEntity<KildaConfiguration.KildaConfigurationData> {
+    public static final KildaConfiguration DEFAULTS = new KildaConfiguration(KildaConfigurationDataImpl.builder()
             .flowEncapsulationType(FlowEncapsulationType.TRANSIT_VLAN)
             .useMultiTable(false)
             .pathComputationStrategy(PathComputationStrategy.COST)
-            .build();
+            .build());
 
-    // Hidden as needed for OGM only.
-    @Id
-    @GeneratedValue
-    @Setter(AccessLevel.NONE)
-    @Getter(AccessLevel.NONE)
-    private Long entityId;
-
-    @Property(name = "flow_encapsulation_type")
-    @Convert(graphPropertyType = String.class)
-    private FlowEncapsulationType flowEncapsulationType;
-
-    @Property(name = "use_multi_table")
-    private Boolean useMultiTable;
-
-    @Property(name = "path_computation_strategy")
-    @Convert(graphPropertyType = String.class)
-    private PathComputationStrategy pathComputationStrategy;
+    @Getter
+    @Delegate
+    @JsonIgnore
+    private KildaConfigurationData data;
 
     /**
-     * Constructor prevents initialization of entityId field.
+     * No args constructor for deserialization purpose.
      */
-    @Builder(toBuilder = true)
-    KildaConfiguration(FlowEncapsulationType flowEncapsulationType,
-                       Boolean useMultiTable,
-                       PathComputationStrategy pathComputationStrategy) {
-        this.flowEncapsulationType = flowEncapsulationType;
-        this.useMultiTable = useMultiTable;
-        this.pathComputationStrategy = pathComputationStrategy;
+    private KildaConfiguration() {
+        data = new KildaConfigurationDataImpl();
+    }
+
+    @Builder
+    public KildaConfiguration(FlowEncapsulationType flowEncapsulationType, Boolean useMultiTable,
+                              PathComputationStrategy pathComputationStrategy) {
+        data = KildaConfigurationDataImpl.builder().flowEncapsulationType(flowEncapsulationType)
+                .useMultiTable(useMultiTable)
+                .pathComputationStrategy(pathComputationStrategy).build();
+    }
+
+    public KildaConfiguration(@NonNull KildaConfigurationData data) {
+        this.data = data;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        KildaConfiguration that = (KildaConfiguration) o;
+        return new EqualsBuilder()
+                .append(getFlowEncapsulationType(), that.getFlowEncapsulationType())
+                .append(getUseMultiTable(), that.getUseMultiTable())
+                .append(getPathComputationStrategy(), that.getPathComputationStrategy())
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+                .append(getFlowEncapsulationType())
+                .append(getUseMultiTable())
+                .append(getPathComputationStrategy())
+                .toHashCode();
+    }
+
+    /**
+     * Defines persistable data of the KildaConfiguration.
+     */
+    public interface KildaConfigurationData {
+        FlowEncapsulationType getFlowEncapsulationType();
+
+        void setFlowEncapsulationType(FlowEncapsulationType flowEncapsulationType);
+
+        Boolean getUseMultiTable();
+
+        void setUseMultiTable(Boolean useMultiTable);
+
+        PathComputationStrategy getPathComputationStrategy();
+
+        void setPathComputationStrategy(PathComputationStrategy pathComputationStrategy);
+    }
+
+    /**
+     * POJO implementation of KildaConfigurationData.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static final class KildaConfigurationDataImpl implements KildaConfigurationData, Serializable {
+        private static final long serialVersionUID = 1L;
+        FlowEncapsulationType flowEncapsulationType;
+        Boolean useMultiTable;
+        PathComputationStrategy pathComputationStrategy;
+    }
+
+    /**
+     * A cloner for KildaConfiguration entity.
+     */
+    @Mapper
+    public interface KildaConfigurationCloner {
+        KildaConfigurationCloner INSTANCE = Mappers.getMapper(KildaConfigurationCloner.class);
+
+        void copy(KildaConfigurationData source, @MappingTarget KildaConfigurationData target);
     }
 }

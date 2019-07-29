@@ -103,8 +103,11 @@ public class RerouteServiceTest {
 
         pinnedFlow = Flow.builder().flowId(FLOW_ID).srcSwitch(SWITCH_A)
                 .destSwitch(SWITCH_C).pinned(true).build();
-        FlowPath pinnedFlowForwardPath = FlowPath.builder().pathId(new PathId("1"))
-                .flow(pinnedFlow).srcSwitch(SWITCH_A).destSwitch(SWITCH_C).cookie(Cookie.buildForwardCookie(1)).build();
+        FlowPath pinnedFlowForwardPath = FlowPath.builder()
+                .pathId(new PathId("1"))
+                .srcSwitch(SWITCH_A).destSwitch(SWITCH_C)
+                .cookie(Cookie.buildForwardCookie(1))
+                .build();
         List<PathSegment> pinnedFlowForwardSegments = new ArrayList<>();
         pinnedFlowForwardSegments.add(PathSegment.builder()
                 .srcSwitch(SWITCH_A)
@@ -121,7 +124,9 @@ public class RerouteServiceTest {
         pinnedFlowForwardPath.setSegments(pinnedFlowForwardSegments);
 
         FlowPath pinnedFlowReversePath = FlowPath.builder().pathId(new PathId("2"))
-                .flow(pinnedFlow).srcSwitch(SWITCH_C).destSwitch(SWITCH_A).cookie(Cookie.buildReverseCookie(2)).build();
+                .srcSwitch(SWITCH_C).destSwitch(SWITCH_A)
+                .cookie(Cookie.buildReverseCookie(2))
+                .build();
         List<PathSegment> pinnedFlowReverseSegments = new ArrayList<>();
         pinnedFlowReverseSegments.add(PathSegment.builder()
                 .srcSwitch(SWITCH_C)
@@ -142,7 +147,8 @@ public class RerouteServiceTest {
         regularFlow = Flow.builder().flowId(FLOW_ID).srcSwitch(SWITCH_A)
                 .destSwitch(SWITCH_C).pinned(false).build();
         FlowPath regularFlowForwardPath = FlowPath.builder().pathId(new PathId("3"))
-                .flow(regularFlow).srcSwitch(SWITCH_A).destSwitch(SWITCH_C).cookie(Cookie.buildForwardCookie(3))
+                .srcSwitch(SWITCH_A).destSwitch(SWITCH_C)
+                .cookie(Cookie.buildForwardCookie(3))
                 .status(FlowPathStatus.ACTIVE)
                 .build();
         List<PathSegment> unpinnedFlowForwardSegments = new ArrayList<>();
@@ -161,7 +167,8 @@ public class RerouteServiceTest {
         regularFlowForwardPath.setSegments(unpinnedFlowForwardSegments);
 
         FlowPath regularFlowReversePath = FlowPath.builder().pathId(new PathId("4"))
-                .flow(regularFlow).srcSwitch(SWITCH_C).destSwitch(SWITCH_A).cookie(Cookie.buildReverseCookie(3))
+                .srcSwitch(SWITCH_C).destSwitch(SWITCH_A)
+                .cookie(Cookie.buildReverseCookie(3))
                 .status(FlowPathStatus.ACTIVE)
                 .build();
         List<PathSegment> unpinnedFlowReverseSegments = new ArrayList<>();
@@ -203,7 +210,7 @@ public class RerouteServiceTest {
             pinnedFlow.setStatus(status);
             return null;
         }).when(flowRepository).updateStatusSafe(eq(pinnedFlow.getFlowId()), any());
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
         FlowPathRepository pathRepository = mock(FlowPathRepository.class);
         doAnswer(invocation -> {
             PathId pathId = invocation.getArgument(0);
@@ -211,9 +218,9 @@ public class RerouteServiceTest {
             pinnedFlow.getPath(pathId).get().setStatus(status);
             return null;
         }).when(pathRepository).updateStatus(any(), any());
-        when(repositoryFactory.createFlowPathRepository()).thenReturn(pathRepository);
+        when(repositoryFactory.getFlowPathRepository()).thenReturn(pathRepository);
         PathSegmentRepository pathSegmentRepository = mock(PathSegmentRepository.class);
-        when(repositoryFactory.createPathSegmentRepository()).thenReturn(pathSegmentRepository);
+        when(repositoryFactory.getPathSegmentRepository()).thenReturn(pathSegmentRepository);
         MessageSender messageSender = mock(MessageSender.class);
         PersistenceManager persistenceManager = mock(PersistenceManager.class);
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
@@ -251,11 +258,11 @@ public class RerouteServiceTest {
         FlowRepository flowRepository = mock(FlowRepository.class);
         when(flowRepository.findDownFlows())
                 .thenReturn(Collections.singletonList(pinnedFlow));
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
         FlowPathRepository pathRepository = mock(FlowPathRepository.class);
-        when(repositoryFactory.createFlowPathRepository()).thenReturn(pathRepository);
+        when(repositoryFactory.getFlowPathRepository()).thenReturn(pathRepository);
         PathSegmentRepository pathSegmentRepository = mock(PathSegmentRepository.class);
-        when(repositoryFactory.createPathSegmentRepository()).thenReturn(pathSegmentRepository);
+        when(repositoryFactory.getPathSegmentRepository()).thenReturn(pathSegmentRepository);
         MessageSender messageSender = mock(MessageSender.class);
         PersistenceManager persistenceManager = mock(PersistenceManager.class);
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
@@ -290,11 +297,11 @@ public class RerouteServiceTest {
         FlowRepository flowRepository = mock(FlowRepository.class);
 
         RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
-        when(repositoryFactory.createPathSegmentRepository())
+        when(repositoryFactory.getPathSegmentRepository())
                 .thenReturn(mock(PathSegmentRepository.class));
-        when(repositoryFactory.createFlowPathRepository())
+        when(repositoryFactory.getFlowPathRepository())
                 .thenReturn(pathRepository);
-        when(repositoryFactory.createFlowRepository())
+        when(repositoryFactory.getFlowRepository())
                 .thenReturn(flowRepository);
 
         PersistenceManager persistenceManager = mock(PersistenceManager.class);
@@ -319,11 +326,11 @@ public class RerouteServiceTest {
     @Test
     public void handleRerouteInactiveAffectedFlows() {
         FlowPathRepository pathRepository = mock(FlowPathRepository.class);
-        when(pathRepository.findInactiveBySegmentSwitch(regularFlow.getSrcSwitch().getSwitchId()))
+        when(pathRepository.findInactiveBySegmentSwitch(regularFlow.getSrcSwitchId()))
                 .thenReturn(Arrays.asList(regularFlow.getForwardPath(), regularFlow.getReversePath()));
 
         RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
-        when(repositoryFactory.createFlowPathRepository())
+        when(repositoryFactory.getFlowPathRepository())
                 .thenReturn(pathRepository);
 
         PersistenceManager persistenceManager = mock(PersistenceManager.class);
@@ -333,7 +340,7 @@ public class RerouteServiceTest {
         RerouteService rerouteService = new RerouteService(persistenceManager);
 
         regularFlow.setStatus(FlowStatus.DOWN);
-        rerouteService.rerouteInactiveAffectedFlows(carrier, CORRELATION_ID, regularFlow.getSrcSwitch().getSwitchId());
+        rerouteService.rerouteInactiveAffectedFlows(carrier, CORRELATION_ID, regularFlow.getSrcSwitchId());
 
         verify(carrier).emitRerouteCommand(
                 eq(CORRELATION_ID), eq(regularFlow),

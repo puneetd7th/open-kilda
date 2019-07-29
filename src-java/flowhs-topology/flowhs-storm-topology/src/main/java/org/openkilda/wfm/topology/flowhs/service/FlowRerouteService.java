@@ -67,8 +67,8 @@ public class FlowRerouteService {
         this.persistenceManager = persistenceManager;
 
         final RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        this.flowRepository = repositoryFactory.createFlowRepository();
-        this.flowEventRepository = repositoryFactory.createFlowEventRepository();
+        this.flowRepository = repositoryFactory.getFlowRepository();
+        this.flowEventRepository = repositoryFactory.getFlowEventRepository();
 
         this.pathComputer = pathComputer;
         this.flowResourcesManager = flowResourcesManager;

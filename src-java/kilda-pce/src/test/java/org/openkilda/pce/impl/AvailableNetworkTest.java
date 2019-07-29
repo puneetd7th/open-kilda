@@ -21,7 +21,6 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-import org.openkilda.model.Flow;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.Isl;
 import org.openkilda.model.IslConfig;
@@ -402,8 +401,10 @@ public class AvailableNetworkTest {
 
     private void addLink(AvailableNetwork network, SwitchId srcDpid, SwitchId dstDpid, int srcPort, int dstPort,
                          int cost, int latency, String srcPop, String dstPop) {
-        Switch srcSwitch = Switch.builder().switchId(srcDpid).pop(srcPop).build();
-        Switch dstSwitch = Switch.builder().switchId(dstDpid).pop(dstPop).build();
+        Switch srcSwitch = Switch.builder().switchId(srcDpid).build();
+        srcSwitch.setPop(srcPop);
+        Switch dstSwitch = Switch.builder().switchId(dstDpid).build();
+        dstSwitch.setPop(dstPop);
 
         Isl isl = Isl.builder()
                 .srcSwitch(srcSwitch)
@@ -424,11 +425,12 @@ public class AvailableNetworkTest {
 
     private PathSegment buildPathWithSegment(SwitchId srcDpid, SwitchId dstDpid, int srcPort, int dstPort,
                                              String srcPop, String dstPop, int seqId) {
-        Switch srcSwitch = Switch.builder().switchId(srcDpid).pop(srcPop).build();
-        Switch dstSwitch = Switch.builder().switchId(dstDpid).pop(dstPop).build();
+        Switch srcSwitch = Switch.builder().switchId(srcDpid).build();
+        srcSwitch.setPop(srcPop);
+        Switch dstSwitch = Switch.builder().switchId(dstDpid).build();
+        dstSwitch.setPop(dstPop);
 
         FlowPath flowPath = FlowPath.builder()
-                .flow(new Flow())
                 .pathId(new PathId(UUID.randomUUID().toString()))
                 .srcSwitch(srcSwitch)
                 .destSwitch(dstSwitch)

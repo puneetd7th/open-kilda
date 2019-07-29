@@ -62,8 +62,8 @@ public class IslLatencyService {
         this.transactionManager = transactionManager;
         this.latencyUpdateInterval = latencyUpdateInterval;
         this.latencyUpdateTimeRange = latencyUpdateTimeRange;
-        islRepository = repositoryFactory.createIslRepository();
-        switchRepository = repositoryFactory.createSwitchRepository();
+        islRepository = repositoryFactory.getIslRepository();
+        switchRepository = repositoryFactory.getSwitchRepository();
         oneWayLatencyStorage = new HashMap<>();
         roundTripLatencyStorage = new HashMap<>();
         roundTripLatencyIsSet = new HashSet<>();
@@ -276,7 +276,6 @@ public class IslLatencyService {
             Isl isl = islRepository.findByEndpoints(srcSwitchId, srcPort, dstSwitchId, dstPort)
                     .orElseThrow(() -> new IslNotFoundException(srcSwitchId, srcPort, dstSwitchId, dstPort));
             isl.setLatency(latency);
-            islRepository.createOrUpdate(isl);
         });
     }
 }

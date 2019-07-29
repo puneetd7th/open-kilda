@@ -24,7 +24,6 @@ import org.junit.Test;
 import java.util.Set;
 
 public class MeterTest {
-
     @Test
     public void calculateBurstSize() {
         assertEquals(1024, Meter.calculateBurstSize(512L, 1024L, 1.0, "centec"));

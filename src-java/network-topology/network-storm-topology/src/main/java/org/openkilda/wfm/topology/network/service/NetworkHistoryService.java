@@ -53,7 +53,7 @@ public class NetworkHistoryService {
 
     private Collection<HistoryFacts> loadNetworkHistory() {
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        SwitchRepository switchRepository = repositoryFactory.createSwitchRepository();
+        SwitchRepository switchRepository = repositoryFactory.getSwitchRepository();
 
         HashMap<SwitchId, HistoryFacts> switchById = new HashMap<>();
         for (Switch switchEntry : switchRepository.findAll()) {
@@ -61,12 +61,12 @@ public class NetworkHistoryService {
             switchById.put(switchId, new HistoryFacts(switchId));
         }
 
-        IslRepository islRepository = repositoryFactory.createIslRepository();
+        IslRepository islRepository = repositoryFactory.getIslRepository();
         for (Isl islEntry : islRepository.findAll()) {
-            HistoryFacts history = switchById.get(islEntry.getSrcSwitch().getSwitchId());
+            HistoryFacts history = switchById.get(islEntry.getSrcSwitchId());
             if (history == null) {
                 log.error("Orphaned ISL relation - {}-{} (read race condition?)",
-                          islEntry.getSrcSwitch().getSwitchId(), islEntry.getSrcPort());
+                          islEntry.getSrcSwitchId(), islEntry.getSrcPort());
                 continue;
             }
 

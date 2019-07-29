@@ -54,7 +54,7 @@ public class FlowDeleteService {
                              int transactionRetriesLimit, int speakerCommandRetriesLimit) {
         this.carrier = carrier;
         this.persistenceManager = persistenceManager;
-        flowEventRepository = persistenceManager.getRepositoryFactory().createFlowEventRepository();
+        flowEventRepository = persistenceManager.getRepositoryFactory().getFlowEventRepository();
         this.flowResourcesManager = flowResourcesManager;
         this.transactionRetriesLimit = transactionRetriesLimit;
         this.speakerCommandRetriesLimit = speakerCommandRetriesLimit;

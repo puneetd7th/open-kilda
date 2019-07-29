@@ -51,7 +51,7 @@ public class ValidateNonIngressRulesAction extends
     public ValidateNonIngressRulesAction(int speakerCommandRetriesLimit, PersistenceManager persistenceManager,
                                          FlowRerouteHubCarrier carrier) {
         this.speakerCommandRetriesLimit = speakerCommandRetriesLimit;
-        flowRepository = persistenceManager.getRepositoryFactory().createFlowRepository();
+        flowRepository = persistenceManager.getRepositoryFactory().getFlowRepository();
         this.carrier = carrier;
     }
 
@@ -107,8 +107,8 @@ public class ValidateNonIngressRulesAction extends
                 Flow flow = flowRepository.findById(flowId)
                         .orElseThrow(() -> new IllegalStateException(format("Flow %s not found", flowId)));
                 boolean isTerminatingSwitchFailed = failedValidationResponses.stream()
-                        .anyMatch(errorResponse -> errorResponse.getSwitchId().equals(flow.getSrcSwitch().getSwitchId())
-                                || errorResponse.getSwitchId().equals(flow.getDestSwitch().getSwitchId()));
+                        .anyMatch(errorResponse -> errorResponse.getSwitchId().equals(flow.getSrcSwitchId())
+                                || errorResponse.getSwitchId().equals(flow.getDestSwitchId()));
                 int rerouteCounter = stateMachine.getRerouteCounter();
                 if (!isTerminatingSwitchFailed && rerouteCounter < REROUTE_RETRY_LIMIT) {
                     rerouteCounter += 1;

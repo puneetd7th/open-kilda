@@ -109,13 +109,13 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
         KildaConfigurationRepository configurationRepository = mock(KildaConfigurationRepository.class);
-        when(configurationRepository.get()).thenReturn(KildaConfiguration.DEFAULTS);
-        when(repositoryFactory.createKildaConfigurationRepository()).thenReturn(configurationRepository);
+        when(configurationRepository.getOrDefault()).thenReturn(KildaConfiguration.DEFAULTS);
+        when(repositoryFactory.getKildaConfigurationRepository()).thenReturn(configurationRepository);
 
-        when(repositoryFactory.createFeatureTogglesRepository()).thenReturn(featureTogglesRepository);
+        when(repositoryFactory.getFeatureTogglesRepository()).thenReturn(featureTogglesRepository);
 
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
-        when(repositoryFactory.createFlowPathRepository()).thenReturn(flowPathRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getFlowPathRepository()).thenReturn(flowPathRepository);
 
         SwitchRepository switchRepository = mock(SwitchRepository.class);
         when(switchRepository.reload(any(Switch.class))).thenAnswer((invocation) -> invocation.getArgument(0));
@@ -125,28 +125,29 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                         .status(SwitchStatus.ACTIVE)
                         .features(Sets.newHashSet(SwitchFeature.METERS))
                         .build()));
-        when(repositoryFactory.createSwitchRepository()).thenReturn(switchRepository);
+        when(repositoryFactory.getSwitchRepository()).thenReturn(switchRepository);
 
         SwitchPropertiesRepository switchPropertiesRepository = mock(SwitchPropertiesRepository.class);
         when(switchPropertiesRepository.findBySwitchId(any(SwitchId.class))).thenAnswer((invocation) ->
                 Optional.of(SwitchProperties.builder()
+                        .switchObj(Switch.builder().switchId(invocation.getArgument(0)).build())
                         .multiTable(false)
                         .supportedTransitEncapsulation(DEFAULT_FLOW_ENCAPSULATION_TYPES)
                         .build()));
-        when(repositoryFactory.createSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
+        when(repositoryFactory.getSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
 
         IslRepository islRepository = mock(IslRepository.class);
-        when(repositoryFactory.createIslRepository()).thenReturn(islRepository);
+        when(repositoryFactory.getIslRepository()).thenReturn(islRepository);
 
         doAnswer(invocation -> {
             FlowPath flowPath = invocation.getArgument(0);
             when(flowPathRepository.findById(flowPath.getPathId())).thenReturn(Optional.of(flowPath));
             return flowPath;
-        }).when(flowPathRepository).createOrUpdate(any(FlowPath.class));
+        }).when(flowPathRepository).add(any(FlowPath.class));
 
         FlowEventRepository flowEventRepository = mock(FlowEventRepository.class);
         when(flowEventRepository.existsByTaskId(any())).thenReturn(false);
-        when(repositoryFactory.createFlowEventRepository()).thenReturn(flowEventRepository);
+        when(repositoryFactory.getFlowEventRepository()).thenReturn(flowEventRepository);
 
         doAnswer(getSpeakerCommandsAnswer()).when(carrier).sendSpeakerRequest(any(FlowSegmentRequest.class));
         target = new FlowCreateService(carrier, persistenceManager, pathComputer, flowResourcesManager,
@@ -182,7 +183,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
 
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository).add(flowCaptor.capture());
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
         assertThat(createdFlow.getFlowId(), is(flowId));
@@ -230,7 +231,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
 
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository).add(flowCaptor.capture());
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
         assertThat(createdFlow.getFlowId(), is(flowId));
@@ -275,7 +276,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         when(pathComputer.getPath(any(Flow.class))).thenReturn(getPath3Switches());
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository).add(flowCaptor.capture());
         // verify flow with status IN PROGRESS has been created
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
@@ -310,8 +311,8 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
 
         FlowPath forwardPath = flowPathRepository.findById(flowResources.getForward().getPathId()).get();
         FlowPath reversePath = flowPathRepository.findById(flowResources.getReverse().getPathId()).get();
-        verify(flowPathRepository).delete(eq(forwardPath));
-        verify(flowPathRepository).delete(eq(reversePath));
+        verify(flowPathRepository).remove(eq(forwardPath));
+        verify(flowPathRepository).remove(eq(reversePath));
     }
 
     @Test
@@ -335,7 +336,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         when(pathComputer.getPath(any(Flow.class))).thenReturn(getPath3Switches());
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository).add(flowCaptor.capture());
         // verify flow with status IN PROGRESS has been created
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
@@ -373,8 +374,8 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
 
         FlowPath forwardPath = flowPathRepository.findById(flowResources.getForward().getPathId()).get();
         FlowPath reversePath = flowPathRepository.findById(flowResources.getReverse().getPathId()).get();
-        verify(flowPathRepository).delete(eq(forwardPath));
-        verify(flowPathRepository).delete(eq(reversePath));
+        verify(flowPathRepository).remove(eq(forwardPath));
+        verify(flowPathRepository).remove(eq(reversePath));
     }
 
     @Test
@@ -401,7 +402,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         when(pathComputer.getPath(any(Flow.class))).thenReturn(getPath3Switches());
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository).add(flowCaptor.capture());
         // verify flow with status IN PROGRESS has been created
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
@@ -463,7 +464,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
         when(pathComputer.getPath(any(Flow.class))).thenReturn(getPath3Switches());
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository).add(flowCaptor.capture());
         // verify flow with status IN PROGRESS has been created
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
@@ -520,7 +521,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
 
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository).add(flowCaptor.capture());
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
         assertThat(createdFlow.getFlowId(), is(flowId));
@@ -576,7 +577,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
 
         target.handleRequest(key, new CommandContext(), flowRequest);
 
-        verify(flowRepository, times(2)).createOrUpdate(flowCaptor.capture());
+        verify(flowRepository, times(2)).add(flowCaptor.capture());
         Flow createdFlow = flowCaptor.getValue();
         assertThat(createdFlow.getStatus(), is(FlowStatus.IN_PROGRESS));
         assertThat(createdFlow.getFlowId(), is(flowId));
@@ -628,7 +629,7 @@ public class FlowCreateServiceTest extends AbstractFlowTest {
                         .thenReturn(Optional.ofNullable(flow.getProtectedReversePath()));
             }
             return null;
-        }).when(flowRepository).createOrUpdate(any(Flow.class));
+        }).when(flowRepository).add(any(Flow.class));
     }
 
     private PathPair getPathOneSwitch() {

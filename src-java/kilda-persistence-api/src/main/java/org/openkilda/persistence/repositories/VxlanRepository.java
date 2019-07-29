@@ -22,14 +22,23 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface VxlanRepository extends Repository<Vxlan> {
+    Collection<Vxlan> findAll();
+
     Collection<Vxlan> findByPathId(PathId pathId, PathId oppositePathId);
 
     /**
-     * Find a vxlan which is not assigned to any flow.
-     * Use the provided defaultVxlan as the first candidate.
+     * Find the maximum among assigned vxlans.
      *
-     * @param defaultVni the potential vxlan to be checked first.
-     * @return a vxlan or {@link Optional#empty()} if no vxlan available.
+     * @return the maximum vxvlan value or {@link Optional#empty()} if there's no assigned vxlan.
      */
-    Optional<Integer> findUnassignedVxlan(int defaultVni);
+    Optional<Integer> findMaximumAssignedVxlan();
+
+    /**
+     * Find the first (lowest by value) vxvlan which is not assigned to any flow.
+     *
+     * @param startVxlan the lowest value for a potential vxlan.
+     * @return the found vxvlan
+     */
+    int findFirstUnassignedVxlan(int startVxlan);
+
 }

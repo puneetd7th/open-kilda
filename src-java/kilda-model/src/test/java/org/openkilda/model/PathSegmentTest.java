@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PathSegmentTest {
-
     private static final SwitchId SWITCH_ID_A = new SwitchId(1L);
     private static final Switch SWITCH_A = Switch.builder().switchId(SWITCH_ID_A).build();
     private static final SwitchId SWITCH_ID_B = new SwitchId(2L);
@@ -34,7 +33,6 @@ public class PathSegmentTest {
 
     private static final SwitchId SWITCH_ID_C = new SwitchId(3L);
 
-
     private Flow flow;
 
     @Before
@@ -42,7 +40,7 @@ public class PathSegmentTest {
         flow = Flow.builder().flowId(FLOW_ID).srcSwitch(SWITCH_A)
                 .destSwitch(SWITCH_B).pinned(true).build();
         FlowPath flowForwardPath = FlowPath.builder().pathId(new PathId("1"))
-                .flow(flow).srcSwitch(SWITCH_A).destSwitch(SWITCH_B).cookie(Cookie.buildForwardCookie(1)).build();
+                .srcSwitch(SWITCH_A).destSwitch(SWITCH_B).cookie(Cookie.buildForwardCookie(1)).build();
         List<PathSegment> flowForwardSegments = new ArrayList<>();
         flowForwardSegments.add(PathSegment.builder()
                 .srcSwitch(SWITCH_A)
@@ -53,7 +51,7 @@ public class PathSegmentTest {
         flowForwardPath.setSegments(flowForwardSegments);
 
         FlowPath flowReversePath = FlowPath.builder().pathId(new PathId("2"))
-                .flow(flow).srcSwitch(SWITCH_B).destSwitch(SWITCH_A).cookie(Cookie.buildReverseCookie(2)).build();
+                .srcSwitch(SWITCH_B).destSwitch(SWITCH_A).cookie(Cookie.buildReverseCookie(2)).build();
         List<PathSegment> flowReverseSegments = new ArrayList<>();
 
         flowReverseSegments.add(PathSegment.builder()

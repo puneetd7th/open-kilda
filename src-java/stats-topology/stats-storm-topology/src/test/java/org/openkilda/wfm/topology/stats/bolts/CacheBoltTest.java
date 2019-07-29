@@ -72,7 +72,7 @@ public class CacheBoltTest {
     public void cacheBoltInitCookieTest() {
         Flow flow = getFlow();
         when(flowRepository.findAll()).thenReturn(Collections.singletonList(flow));
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
 
         CacheBolt cacheBolt = new CacheBolt(persistenceManager);
@@ -95,7 +95,7 @@ public class CacheBoltTest {
     public void cacheBoltInitMeterTest() {
         Flow flow = getFlow();
         when(flowRepository.findAll()).thenReturn(Collections.singletonList(flow));
-        when(repositoryFactory.createFlowRepository()).thenReturn(flowRepository);
+        when(repositoryFactory.getFlowRepository()).thenReturn(flowRepository);
         when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);
 
         CacheBolt cacheBolt = new CacheBolt(persistenceManager);
@@ -149,7 +149,6 @@ public class CacheBoltTest {
     private FlowPath getPath(Flow flow, Switch src, Switch dest, long cookie, long meterId) {
         return FlowPath.builder()
                 .pathId(new PathId(uuid()))
-                .flow(flow)
                 .srcSwitch(src)
                 .destSwitch(dest)
                 .cookie(new Cookie(cookie))

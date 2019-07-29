@@ -39,7 +39,7 @@ public class ValidateIngressRulesAction extends
     private final int speakerCommandRetriesLimit;
 
     public ValidateIngressRulesAction(PersistenceManager persistenceManager, int speakerCommandRetriesLimit) {
-        this.switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
+        this.switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
         this.speakerCommandRetriesLimit = speakerCommandRetriesLimit;
     }
 

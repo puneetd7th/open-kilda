@@ -41,14 +41,17 @@ public abstract class BaseFlowPathRemovalAction<T extends FlowProcessingFsm<T, S
     public BaseFlowPathRemovalAction(PersistenceManager persistenceManager) {
         super(persistenceManager);
 
-        islRepository = persistenceManager.getRepositoryFactory().createIslRepository();
+        islRepository = persistenceManager.getRepositoryFactory().getIslRepository();
     }
 
     protected void deleteFlowPaths(FlowPathPair pathPair) {
-        flowPathRepository.delete(pathPair.getForward());
-        flowPathRepository.delete(pathPair.getReverse());
+        FlowPath forwardBefore = pathPair.getForward();
+        FlowPath reverseBefore = pathPair.getReverse();
 
-        updateIslsForFlowPath(pathPair.getForward(), pathPair.getReverse());
+        flowPathRepository.remove(pathPair.getForward());
+        flowPathRepository.remove(pathPair.getReverse());
+
+        updateIslsForFlowPath(forwardBefore, reverseBefore);
     }
 
     protected void updateIslsForFlowPath(FlowPath... paths) {
@@ -56,8 +59,8 @@ public abstract class BaseFlowPathRemovalAction<T extends FlowProcessingFsm<T, S
             path.getSegments().forEach(pathSegment -> {
                 log.debug("Updating ISL for the path segment: {}", pathSegment);
 
-                updateAvailableBandwidth(pathSegment.getSrcSwitch().getSwitchId(), pathSegment.getSrcPort(),
-                        pathSegment.getDestSwitch().getSwitchId(), pathSegment.getDestPort());
+                updateAvailableBandwidth(pathSegment.getSrcSwitchId(), pathSegment.getSrcPort(),
+                        pathSegment.getDestSwitchId(), pathSegment.getDestPort());
             });
         }
     }

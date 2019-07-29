@@ -16,21 +16,15 @@ dependencies {
     implementation project(':kilda-pce')
     implementation project(':kilda-reporting')
     implementation project(':floodlight-api')
-    implementation project(':kilda-persistence-neo4j')
+    runtimeOnly project(':kilda-persistence-neo4j')
 
     compileOnly('org.apache.storm:storm-core')
     testImplementation('org.apache.storm:storm-core')
-
-    implementation 'org.neo4j.driver:neo4j-java-driver'
 
     testImplementation 'junit:junit'
     testImplementation 'pl.pragmatists:JUnitParams'
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'org.hamcrest:hamcrest-library'
-    testImplementation 'org.neo4j:neo4j'
-    testImplementation 'org.neo4j:neo4j-bolt'
-    testImplementation 'org.neo4j:neo4j-ogm-core'
-    testImplementation 'org.neo4j.driver:neo4j-java-driver'
     testRuntimeOnly 'org.apache.curator:curator-test'
     testRuntimeOnly 'org.clojure:clojure'
     testRuntimeOnly 'org.hibernate.validator:hibernate-validator'

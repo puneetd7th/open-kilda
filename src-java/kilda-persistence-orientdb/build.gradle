@@ -1,0 +1,22 @@
+description = 'Kilda Persistence OrientDB Implemention'
+dependencies {
+    implementation project(':kilda-model')
+    implementation project(':kilda-persistence-tinkerpop')
+    implementation project(':kilda-configuration')
+
+    implementation 'com.syncleus.ferma:ferma-orientdb:3.0.1'
+
+    implementation 'com.orientechnologies:orientdb-graphdb:3.0.23'
+    implementation 'com.orientechnologies:orientdb-gremlin:3.0.23'
+    implementation 'com.orientechnologies:orientdb-client:3.0.23'
+    implementation 'com.orientechnologies:orientdb-core:3.0.23'
+    implementation 'com.orientechnologies:orientdb-server:3.0.23'
+    implementation 'com.orientechnologies:orientdb-tools:3.0.23'
+
+    implementation 'net.jodah:failsafe:1.0.5'
+
+    testImplementation 'junit:junit:4.12'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}

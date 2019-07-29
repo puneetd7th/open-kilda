@@ -110,7 +110,7 @@ public class FlowThrottlingBolt extends AbstractTickRichBolt {
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         super.prepare(map, topologyContext, outputCollector);
-        featureTogglesRepository = persistenceManager.getRepositoryFactory().createFeatureTogglesRepository();
+        featureTogglesRepository = persistenceManager.getRepositoryFactory().getFeatureTogglesRepository();
         reroutesThrottling = new ReroutesThrottling(minDelay, maxDelay, defaultFlowPriority);
 
     }

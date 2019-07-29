@@ -81,9 +81,9 @@ public abstract class BaseResourceAllocationAction<T extends FlowPathSwappingFsm
         this.pathAllocationRetryDelay = pathAllocationRetryDelay;
 
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        switchRepository = repositoryFactory.createSwitchRepository();
-        islRepository = repositoryFactory.createIslRepository();
-        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
+        switchRepository = repositoryFactory.getSwitchRepository();
+        islRepository = repositoryFactory.getIslRepository();
+        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.getSwitchPropertiesRepository();
         flowPathBuilder = new FlowPathBuilder(switchRepository, switchPropertiesRepository);
 
         this.pathComputer = pathComputer;
@@ -204,8 +204,8 @@ public abstract class BaseResourceAllocationAction<T extends FlowPathSwappingFsm
         persistenceManager.getTransactionManager().doInTransaction(() -> {
             flowPathRepository.lockInvolvedSwitches(newForwardPath, newReversePath);
 
-            flowPathRepository.createOrUpdate(newForwardPath);
-            flowPathRepository.createOrUpdate(newReversePath);
+            flowPathRepository.add(newForwardPath);
+            flowPathRepository.add(newReversePath);
 
             updateIslsForFlowPath(newForwardPath, pathsToReuseBandwidth.getForward());
             updateIslsForFlowPath(newReversePath, pathsToReuseBandwidth.getReverse());
@@ -231,8 +231,8 @@ public abstract class BaseResourceAllocationAction<T extends FlowPathSwappingFsm
                 }
             }
 
-            updateAvailableBandwidth(pathSegment.getSrcSwitch().getSwitchId(), pathSegment.getSrcPort(),
-                    pathSegment.getDestSwitch().getSwitchId(), pathSegment.getDestPort(),
+            updateAvailableBandwidth(pathSegment.getSrcSwitchId(), pathSegment.getSrcPort(),
+                    pathSegment.getDestSwitchId(), pathSegment.getDestPort(),
                     allowedOverprovisionedBandwidth);
         }
     }

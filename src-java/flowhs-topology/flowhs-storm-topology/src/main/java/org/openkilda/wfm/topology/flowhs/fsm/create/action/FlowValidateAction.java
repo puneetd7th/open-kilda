@@ -53,10 +53,10 @@ public class FlowValidateAction extends NbTrackableAction<FlowCreateFsm, State, 
         super(persistenceManager);
 
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        this.featureTogglesRepository = repositoryFactory.createFeatureTogglesRepository();
-        SwitchRepository switchRepository = repositoryFactory.createSwitchRepository();
-        IslRepository islRepository = repositoryFactory.createIslRepository();
-        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
+        this.featureTogglesRepository = repositoryFactory.getFeatureTogglesRepository();
+        SwitchRepository switchRepository = repositoryFactory.getSwitchRepository();
+        IslRepository islRepository = repositoryFactory.getIslRepository();
+        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.getSwitchPropertiesRepository();
         this.flowValidator = new FlowValidator(
                 flowRepository, switchRepository, islRepository, switchPropertiesRepository);
         this.dashboardLogger = dashboardLogger;

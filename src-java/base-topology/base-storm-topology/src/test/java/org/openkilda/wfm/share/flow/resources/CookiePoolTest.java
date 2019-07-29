@@ -19,17 +19,19 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.openkilda.persistence.Neo4jBasedTest;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 
 import org.junit.Before;
 import org.junit.Test;
 
-public class CookiePoolTest extends Neo4jBasedTest {
+public class CookiePoolTest extends InMemoryGraphBasedTest {
 
     private CookiePool cookiePool;
 
     @Before
     public void setUp() {
+        cleanTinkerGraph();
+
         cookiePool = new CookiePool(persistenceManager, 5, 25);
     }
 
@@ -46,15 +48,15 @@ public class CookiePoolTest extends Neo4jBasedTest {
 
         cookiePool.deallocate(second);
         long fourth = cookiePool.allocate("flow_4");
-        assertEquals(6, fourth);
+        assertEquals(8, fourth);
 
         long fifth = cookiePool.allocate("flow_5");
-        assertEquals(8, fifth);
+        assertEquals(9, fifth);
     }
 
     @Test(expected = ResourceNotAvailableException.class)
     public void cookiePoolFullTest() {
-        for (int i = 4; i <= 26; i++) {
+        for (int i = 5; i <= 26; i++) {
             assertTrue(cookiePool.allocate(format("flow_%d", i)) > 0);
         }
     }

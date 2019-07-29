@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 /**
  * Represents information about a cookie.
  * Uses 64 bit to encode information about the flow:
- *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |            Payload Reserved           |                       |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -48,44 +48,44 @@ import java.util.stream.Collectors;
 public class Cookie implements Comparable<Cookie>, Serializable {
     private static final long serialVersionUID = 1L;
 
-    public static final long DEFAULT_RULE_FLAG                   = 0x8000_0000_0000_0000L;
-    public static final long FLOW_PATH_FORWARD_FLAG              = 0x4000_0000_0000_0000L;
-    public static final long FLOW_PATH_REVERSE_FLAG              = 0x2000_0000_0000_0000L;
+    public static final long DEFAULT_RULE_FLAG = 0x8000_0000_0000_0000L;
+    public static final long FLOW_PATH_FORWARD_FLAG = 0x4000_0000_0000_0000L;
+    public static final long FLOW_PATH_REVERSE_FLAG = 0x2000_0000_0000_0000L;
 
     // There is no alive system that use this deprecated direction flags so it should be save to drop it.
     @Deprecated
     public static final long DEPRECATED_FLOW_PATH_DIRECTION_FLAG = 0x0080_0000_0000_0000L;
-    public static final long FLOW_COOKIE_VALUE_MASK              = 0x0000_0000_000F_FFFFL;
-    public static final long ISL_COOKIE_VALUE_MASK               = 0x0000_0000_000F_FFFFL;
-    public static final long INGRESS_RULE_COOKIE_VALUE_MASK      = 0x0000_0000_000F_FFFFL;
+    public static final long FLOW_COOKIE_VALUE_MASK = 0x0000_0000_000F_FFFFL;
+    public static final long ISL_COOKIE_VALUE_MASK = 0x0000_0000_000F_FFFFL;
+    public static final long INGRESS_RULE_COOKIE_VALUE_MASK = 0x0000_0000_000F_FFFFL;
 
-    public static final long DROP_RULE_COOKIE                           = 0x01L | DEFAULT_RULE_FLAG;
-    public static final long VERIFICATION_BROADCAST_RULE_COOKIE         = 0x02L | DEFAULT_RULE_FLAG;
-    public static final long VERIFICATION_UNICAST_RULE_COOKIE           = 0x03L | DEFAULT_RULE_FLAG;
-    public static final long DROP_VERIFICATION_LOOP_RULE_COOKIE         = 0x04L | DEFAULT_RULE_FLAG;
-    public static final long CATCH_BFD_RULE_COOKIE                      = 0x05L | DEFAULT_RULE_FLAG;
-    public static final long ROUND_TRIP_LATENCY_RULE_COOKIE             = 0x06L | DEFAULT_RULE_FLAG;
-    public static final long VERIFICATION_UNICAST_VXLAN_RULE_COOKIE     = 0x07L | DEFAULT_RULE_FLAG;
+    public static final long DROP_RULE_COOKIE = 0x01L | DEFAULT_RULE_FLAG;
+    public static final long VERIFICATION_BROADCAST_RULE_COOKIE = 0x02L | DEFAULT_RULE_FLAG;
+    public static final long VERIFICATION_UNICAST_RULE_COOKIE = 0x03L | DEFAULT_RULE_FLAG;
+    public static final long DROP_VERIFICATION_LOOP_RULE_COOKIE = 0x04L | DEFAULT_RULE_FLAG;
+    public static final long CATCH_BFD_RULE_COOKIE = 0x05L | DEFAULT_RULE_FLAG;
+    public static final long ROUND_TRIP_LATENCY_RULE_COOKIE = 0x06L | DEFAULT_RULE_FLAG;
+    public static final long VERIFICATION_UNICAST_VXLAN_RULE_COOKIE = 0x07L | DEFAULT_RULE_FLAG;
     public static final long MULTITABLE_PRE_INGRESS_PASS_THROUGH_COOKIE = 0x08L | DEFAULT_RULE_FLAG;
-    public static final long MULTITABLE_INGRESS_DROP_COOKIE             = 0x09L | DEFAULT_RULE_FLAG;
-    public static final long MULTITABLE_POST_INGRESS_DROP_COOKIE        = 0x0AL | DEFAULT_RULE_FLAG;
-    public static final long MULTITABLE_EGRESS_PASS_THROUGH_COOKIE      = 0x0BL | DEFAULT_RULE_FLAG;
-    public static final long MULTITABLE_TRANSIT_DROP_COOKIE             = 0x0CL | DEFAULT_RULE_FLAG;
-    public static final long LLDP_INPUT_PRE_DROP_COOKIE                 = 0x0DL | DEFAULT_RULE_FLAG;
-    public static final long LLDP_TRANSIT_COOKIE                        = 0x0EL | DEFAULT_RULE_FLAG;
-    public static final long LLDP_INGRESS_COOKIE                        = 0x0FL | DEFAULT_RULE_FLAG;
-    public static final long LLDP_POST_INGRESS_COOKIE                   = 0x10L | DEFAULT_RULE_FLAG;
-    public static final long LLDP_POST_INGRESS_VXLAN_COOKIE             = 0x11L | DEFAULT_RULE_FLAG;
-    public static final long LLDP_POST_INGRESS_ONE_SWITCH_COOKIE        = 0x12L | DEFAULT_RULE_FLAG;
+    public static final long MULTITABLE_INGRESS_DROP_COOKIE = 0x09L | DEFAULT_RULE_FLAG;
+    public static final long MULTITABLE_POST_INGRESS_DROP_COOKIE = 0x0AL | DEFAULT_RULE_FLAG;
+    public static final long MULTITABLE_EGRESS_PASS_THROUGH_COOKIE = 0x0BL | DEFAULT_RULE_FLAG;
+    public static final long MULTITABLE_TRANSIT_DROP_COOKIE = 0x0CL | DEFAULT_RULE_FLAG;
+    public static final long LLDP_INPUT_PRE_DROP_COOKIE = 0x0DL | DEFAULT_RULE_FLAG;
+    public static final long LLDP_TRANSIT_COOKIE = 0x0EL | DEFAULT_RULE_FLAG;
+    public static final long LLDP_INGRESS_COOKIE = 0x0FL | DEFAULT_RULE_FLAG;
+    public static final long LLDP_POST_INGRESS_COOKIE = 0x10L | DEFAULT_RULE_FLAG;
+    public static final long LLDP_POST_INGRESS_VXLAN_COOKIE = 0x11L | DEFAULT_RULE_FLAG;
+    public static final long LLDP_POST_INGRESS_ONE_SWITCH_COOKIE = 0x12L | DEFAULT_RULE_FLAG;
 
     // 9 bits cookie type "field"
-    public static final long TYPE_MASK                               = 0x1FF0_0000_0000_0000L;
-    public static final long FLOW_COOKIE_TYPE                        = 0x0000_0000_0000_0000L;
-    public static final long LLDP_INPUT_CUSTOMER_TYPE                = 0x0010_0000_0000_0000L;
-    public static final long MULTITABLE_ISL_VLAN_EGRESS_RULES_TYPE   = 0x0020_0000_0000_0000L;
-    public static final long MULTITABLE_ISL_VXLAN_EGRESS_RULES_TYPE  = 0x0030_0000_0000_0000L;
+    public static final long TYPE_MASK = 0x1FF0_0000_0000_0000L;
+    public static final long FLOW_COOKIE_TYPE = 0x0000_0000_0000_0000L;
+    public static final long LLDP_INPUT_CUSTOMER_TYPE = 0x0010_0000_0000_0000L;
+    public static final long MULTITABLE_ISL_VLAN_EGRESS_RULES_TYPE = 0x0020_0000_0000_0000L;
+    public static final long MULTITABLE_ISL_VXLAN_EGRESS_RULES_TYPE = 0x0030_0000_0000_0000L;
     public static final long MULTITABLE_ISL_VXLAN_TRANSIT_RULES_TYPE = 0x0040_0000_0000_0000L;
-    public static final long MULTITABLE_INGRESS_RULES_TYPE           = 0x0050_0000_0000_0000L;
+    public static final long MULTITABLE_INGRESS_RULES_TYPE = 0x0050_0000_0000_0000L;
 
     private final long value;
 

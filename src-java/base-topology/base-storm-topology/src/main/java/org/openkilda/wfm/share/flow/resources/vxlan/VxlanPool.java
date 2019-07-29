@@ -44,7 +44,7 @@ public class VxlanPool implements EncapsulationResourcesProvider<VxlanEncapsulat
     public VxlanPool(PersistenceManager persistenceManager, int minVxlan, int maxVxlan) {
         transactionManager = persistenceManager.getTransactionManager();
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        vxlanRepository = repositoryFactory.createVxlanRepository();
+        vxlanRepository = repositoryFactory.getVxlanRepository();
 
         this.minVxlan = minVxlan;
         this.maxVxlan = maxVxlan;
@@ -61,18 +61,23 @@ public class VxlanPool implements EncapsulationResourcesProvider<VxlanEncapsulat
 
     private VxlanEncapsulation allocate(Flow flow, PathId pathId) {
         return transactionManager.doInTransaction(() -> {
-            int availableVxlan = vxlanRepository.findUnassignedVxlan(minVxlan)
-                    .orElseThrow(() -> new ResourceNotAvailableException("No vxlan available"));
-            if (availableVxlan > maxVxlan) {
+            Optional<Integer> availableVxlan = vxlanRepository.findMaximumAssignedVxlan()
+                    .map(vxlan -> vxlan + 1)
+                    .filter(vxlan -> vxlan <= maxVxlan);
+            if (!availableVxlan.isPresent()) {
+                availableVxlan = Optional.of(vxlanRepository.findFirstUnassignedVxlan(minVxlan))
+                        .filter(vxlan -> vxlan <= maxVxlan);
+            }
+            if (!availableVxlan.isPresent()) {
                 throw new ResourceNotAvailableException("No vxlan available");
             }
 
             Vxlan vxlan = Vxlan.builder()
-                    .vni(availableVxlan)
+                    .vni(availableVxlan.get())
                     .flowId(flow.getFlowId())
                     .pathId(pathId)
                     .build();
-            vxlanRepository.createOrUpdate(vxlan);
+            vxlanRepository.add(vxlan);
 
             return VxlanEncapsulation.builder()
                     .vxlan(vxlan)
@@ -87,7 +92,7 @@ public class VxlanPool implements EncapsulationResourcesProvider<VxlanEncapsulat
     public void deallocate(PathId pathId) {
         transactionManager.doInTransaction(() ->
                 vxlanRepository.findByPathId(pathId, null)
-                        .forEach(vxlanRepository::delete));
+                        .forEach(vxlanRepository::remove));
     }
 
     /**

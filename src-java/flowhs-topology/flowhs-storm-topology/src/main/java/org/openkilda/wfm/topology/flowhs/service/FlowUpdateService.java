@@ -62,8 +62,8 @@ public class FlowUpdateService {
                              int speakerCommandRetriesLimit) {
         this.carrier = carrier;
         this.persistenceManager = persistenceManager;
-        flowEventRepository = persistenceManager.getRepositoryFactory().createFlowEventRepository();
-        kildaConfigurationRepository = persistenceManager.getRepositoryFactory().createKildaConfigurationRepository();
+        flowEventRepository = persistenceManager.getRepositoryFactory().getFlowEventRepository();
+        kildaConfigurationRepository = persistenceManager.getRepositoryFactory().getKildaConfigurationRepository();
         this.pathComputer = pathComputer;
         this.flowResourcesManager = flowResourcesManager;
         this.transactionRetriesLimit = transactionRetriesLimit;
@@ -98,10 +98,12 @@ public class FlowUpdateService {
 
         RequestedFlow requestedFlow = RequestedFlowMapper.INSTANCE.toRequestedFlow(request);
         if (requestedFlow.getFlowEncapsulationType() == null) {
-            requestedFlow.setFlowEncapsulationType(kildaConfigurationRepository.get().getFlowEncapsulationType());
+            requestedFlow.setFlowEncapsulationType(
+                    kildaConfigurationRepository.getOrDefault().getFlowEncapsulationType());
         }
         if (requestedFlow.getPathComputationStrategy() == null) {
-            requestedFlow.setPathComputationStrategy(kildaConfigurationRepository.get().getPathComputationStrategy());
+            requestedFlow.setPathComputationStrategy(
+                    kildaConfigurationRepository.getOrDefault().getPathComputationStrategy());
         }
         FlowUpdateContext context = FlowUpdateContext.builder()
                 .targetFlow(requestedFlow)

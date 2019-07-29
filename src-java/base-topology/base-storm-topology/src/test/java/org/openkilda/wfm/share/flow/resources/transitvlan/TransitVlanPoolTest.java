@@ -24,7 +24,7 @@ import org.openkilda.model.PathId;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
 import org.openkilda.model.TransitVlan;
-import org.openkilda.persistence.Neo4jBasedTest;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 import org.openkilda.persistence.repositories.SwitchRepository;
 import org.openkilda.wfm.share.flow.resources.ResourceNotAvailableException;
 
@@ -32,20 +32,22 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TransitVlanPoolTest extends Neo4jBasedTest {
+public class TransitVlanPoolTest extends InMemoryGraphBasedTest {
 
     private TransitVlanPool transitVlanPool;
 
-    private Switch switch1 = Switch.builder().switchId(new SwitchId("ff:00")).build();
-    private Switch switch2 = Switch.builder().switchId(new SwitchId("ff:01")).build();
+    private Switch switch1;
+    private Switch switch2;
 
     @Before
     public void setUp() {
+        cleanTinkerGraph();
+
         transitVlanPool = new TransitVlanPool(persistenceManager, 100, 110);
 
-        SwitchRepository switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
-        switchRepository.createOrUpdate(switch1);
-        switchRepository.createOrUpdate(switch2);
+        SwitchRepository switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
+        switch1 = switchRepository.add(Switch.builder().switchId(new SwitchId("ff:00")).build());
+        switch2 = switchRepository.add(Switch.builder().switchId(new SwitchId("ff:01")).build());
     }
 
     @Test
@@ -71,12 +73,12 @@ public class TransitVlanPoolTest extends Neo4jBasedTest {
         flow.setFlowId("flow_4");
         int fourth = transitVlanPool.allocate(flow, new PathId("path_4"), new PathId("opposit_4"))
                 .getTransitVlan().getVlan();
-        assertEquals(101, fourth);
+        assertEquals(103, fourth);
 
         flow.setFlowId("flow_5");
         int fifth = transitVlanPool.allocate(flow, new PathId("path_5"), new PathId("opposit_5"))
                 .getTransitVlan().getVlan();
-        assertEquals(103, fifth);
+        assertEquals(104, fifth);
     }
 
     @Test(expected = ResourceNotAvailableException.class)

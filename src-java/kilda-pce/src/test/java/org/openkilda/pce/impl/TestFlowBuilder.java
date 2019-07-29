@@ -26,7 +26,6 @@ import org.openkilda.model.Switch;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import java.util.Collections;
 import java.util.UUID;
 
 @Setter
@@ -67,8 +66,8 @@ public class TestFlowBuilder {
                 .bandwidth(bandwidth)
                 .ignoreBandwidth(ignoreBandwidth)
                 .encapsulationType(FlowEncapsulationType.TRANSIT_VLAN)
-                .pathComputationStrategy(pathComputationStrategy)
                 .build();
+        flow.setPathComputationStrategy(pathComputationStrategy);
 
         FlowPath forwardPath =
                 buildFlowPath(flow, srcSwitch, destSwitch, Cookie.buildForwardCookie(unmaskedCookie));
@@ -83,11 +82,9 @@ public class TestFlowBuilder {
 
     private FlowPath buildFlowPath(Flow flow, Switch pathSrc, Switch pathDest, Cookie cookie) {
         return FlowPath.builder()
-                .flow(flow)
                 .pathId(new PathId(UUID.randomUUID().toString()))
                 .srcSwitch(pathSrc)
                 .destSwitch(pathDest)
-                .segments(Collections.emptyList())
                 .cookie(cookie)
                 .bandwidth(flow.getBandwidth())
                 .ignoreBandwidth(flow.isIgnoreBandwidth())

@@ -35,6 +35,7 @@ import org.openkilda.pce.PathPair;
 import org.openkilda.pce.exception.RecoverableException;
 import org.openkilda.pce.exception.UnroutableFlowException;
 import org.openkilda.persistence.ConstraintViolationException;
+import org.openkilda.persistence.PersistenceException;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.persistence.repositories.IslRepository;
 import org.openkilda.persistence.repositories.SwitchPropertiesRepository;
@@ -66,7 +67,6 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
-import org.neo4j.driver.v1.exceptions.TransientException;
 
 import java.util.List;
 import java.util.Optional;
@@ -90,9 +90,9 @@ public class ResourcesAllocationAction extends NbTrackableAction<FlowCreateFsm, 
         this.pathComputer = pathComputer;
         this.transactionRetriesLimit = transactionRetriesLimit;
         this.resourcesManager = resourcesManager;
-        this.switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
-        this.switchPropertiesRepository = persistenceManager.getRepositoryFactory().createSwitchPropertiesRepository();
-        this.islRepository = persistenceManager.getRepositoryFactory().createIslRepository();
+        this.switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
+        this.switchPropertiesRepository = persistenceManager.getRepositoryFactory().getSwitchPropertiesRepository();
+        this.islRepository = persistenceManager.getRepositoryFactory().getIslRepository();
 
         this.flowPathBuilder = new FlowPathBuilder(switchRepository, switchPropertiesRepository);
         this.commandBuilderFactory = new FlowCommandBuilderFactory(resourcesManager);
@@ -180,7 +180,7 @@ public class ResourcesAllocationAction extends NbTrackableAction<FlowCreateFsm, 
             Failsafe.with(new RetryPolicy()
                     .retryOn(RecoverableException.class)
                     .retryOn(ResourceAllocationException.class)
-                    .retryOn(TransientException.class)
+                    .retryOn(PersistenceException.class)
                     .withMaxRetries(transactionRetriesLimit))
                     .onRetry(e -> log.warn("Retrying transaction for resource allocation finished with exception", e))
                     .onRetriesExceeded(e -> log.warn("TX retry attempts exceed with error", e))
@@ -244,7 +244,7 @@ public class ResourcesAllocationAction extends NbTrackableAction<FlowCreateFsm, 
         flow.setReversePath(reverse);
 
         flowPathRepository.lockInvolvedSwitches(forward, reverse);
-        flowRepository.createOrUpdate(flow);
+        flowRepository.add(flow);
 
         updateIslsForFlowPath(forward);
         updateIslsForFlowPath(reverse);
@@ -288,7 +288,7 @@ public class ResourcesAllocationAction extends NbTrackableAction<FlowCreateFsm, 
         fsm.setProtectedReversePathId(reverse.getPathId());
 
         flowPathRepository.lockInvolvedSwitches(forward, reverse);
-        flowRepository.createOrUpdate(flow);
+        flowRepository.add(flow);
 
         updateIslsForFlowPath(forward);
         updateIslsForFlowPath(reverse);
@@ -299,8 +299,8 @@ public class ResourcesAllocationAction extends NbTrackableAction<FlowCreateFsm, 
         path.getSegments().forEach(pathSegment -> {
             log.debug("Updating ISL for the path segment: {}", pathSegment);
 
-            updateAvailableBandwidth(pathSegment.getSrcSwitch().getSwitchId(), pathSegment.getSrcPort(),
-                    pathSegment.getDestSwitch().getSwitchId(), pathSegment.getDestPort());
+            updateAvailableBandwidth(pathSegment.getSrcSwitchId(), pathSegment.getSrcPort(),
+                    pathSegment.getDestSwitchId(), pathSegment.getDestPort());
         });
     }
 
@@ -311,7 +311,6 @@ public class ResourcesAllocationAction extends NbTrackableAction<FlowCreateFsm, 
         Optional<Isl> matchedIsl = islRepository.findByEndpoints(srcSwitch, srcPort, dstSwitch, dstPort);
         matchedIsl.ifPresent(isl -> {
             isl.setAvailableBandwidth(isl.getMaxBandwidth() - usedBandwidth);
-            islRepository.createOrUpdate(isl);
         });
     }
 

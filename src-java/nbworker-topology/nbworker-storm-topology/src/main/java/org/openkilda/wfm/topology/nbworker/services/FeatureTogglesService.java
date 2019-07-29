@@ -16,12 +16,15 @@
 package org.openkilda.wfm.topology.nbworker.services;
 
 import org.openkilda.model.FeatureToggles;
+import org.openkilda.model.FeatureToggles.FeatureTogglesCloner;
 import org.openkilda.persistence.TransactionManager;
 import org.openkilda.persistence.repositories.FeatureTogglesRepository;
 import org.openkilda.persistence.repositories.RepositoryFactory;
 import org.openkilda.wfm.error.FeatureTogglesNotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
 
 @Slf4j
 public class FeatureTogglesService {
@@ -33,7 +36,7 @@ public class FeatureTogglesService {
     public FeatureTogglesService(IFeatureTogglesCarrier carrier, RepositoryFactory repositoryFactory,
                                  TransactionManager transactionManager) {
         this.carrier = carrier;
-        this.featureTogglesRepository = repositoryFactory.createFeatureTogglesRepository();
+        this.featureTogglesRepository = repositoryFactory.getFeatureTogglesRepository();
         this.transactionManager = transactionManager;
     }
 
@@ -52,10 +55,16 @@ public class FeatureTogglesService {
      */
     public FeatureToggles createOrUpdateFeatureToggles(FeatureToggles featureToggles) {
         log.info("Process feature-toggles update - toggles:{}", featureToggles);
-        FeatureToggles before = featureTogglesRepository.find().orElse(FeatureToggles.DEFAULTS);
+        FeatureToggles before = featureTogglesRepository.getOrDefault();
+
         FeatureToggles after = transactionManager.doInTransaction(() -> {
-            featureTogglesRepository.createOrUpdate(featureToggles);
-            return featureTogglesRepository.find().get();
+            Optional<FeatureToggles> current = featureTogglesRepository.find();
+            if (current.isPresent()) {
+                FeatureTogglesCloner.INSTANCE.copy(featureToggles.getData(), current.get().getData());
+                return current.get();
+            } else {
+                return featureTogglesRepository.add(featureToggles);
+            }
         });
 
         if (!before.equals(after)) {

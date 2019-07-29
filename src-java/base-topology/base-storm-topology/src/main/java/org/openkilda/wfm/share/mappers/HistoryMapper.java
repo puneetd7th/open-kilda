@@ -69,8 +69,8 @@ public abstract class HistoryMapper {
      * Note: you have to additionally set {@link org.openkilda.wfm.share.history.model.FlowDumpData.DumpType}
      * to the dump data.
      */
-    @Mapping(target = "sourceSwitch", expression = "java(flow.getSrcSwitch().getSwitchId())")
-    @Mapping(target = "destinationSwitch", expression = "java(flow.getDestSwitch().getSwitchId())")
+    @Mapping(target = "sourceSwitch", expression = "java(flow.getSrcSwitchId())")
+    @Mapping(target = "destinationSwitch", expression = "java(flow.getDestSwitchId())")
     @Mapping(source = "flow.srcPort", target = "sourcePort")
     @Mapping(source = "flow.destPort", target = "destinationPort")
     @Mapping(source = "flow.srcVlan", target = "sourceVlan")
@@ -93,8 +93,8 @@ public abstract class HistoryMapper {
      * Note: you have to additionally set {@link org.openkilda.wfm.share.history.model.FlowDumpData.DumpType}
      * to the dump data.
      */
-    @Mapping(target = "sourceSwitch", expression = "java(flow.getSrcSwitch().getSwitchId())")
-    @Mapping(target = "destinationSwitch", expression = "java(flow.getDestSwitch().getSwitchId())")
+    @Mapping(target = "sourceSwitch", expression = "java(flow.getSrcSwitchId())")
+    @Mapping(target = "destinationSwitch", expression = "java(flow.getDestSwitchId())")
     @Mapping(source = "flow.srcPort", target = "sourcePort")
     @Mapping(source = "flow.destPort", target = "destinationPort")
     @Mapping(source = "flow.srcVlan", target = "sourceVlan")

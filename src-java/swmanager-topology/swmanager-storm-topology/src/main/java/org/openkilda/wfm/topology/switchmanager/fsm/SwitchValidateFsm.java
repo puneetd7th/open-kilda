@@ -112,13 +112,13 @@ public class SwitchValidateFsm
         this.flowPorts = new ArrayList<>();
         this.flowLldpPorts = new HashSet<>();
 
-        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.createSwitchPropertiesRepository();
+        SwitchPropertiesRepository switchPropertiesRepository = repositoryFactory.getSwitchPropertiesRepository();
         this.switchProperties = switchPropertiesRepository.findBySwitchId(switchId).orElse(null);
         boolean switchLldp = switchProperties != null && switchProperties.isSwitchLldp();
 
-        FlowPathRepository flowPathRepository = repositoryFactory.createFlowPathRepository();
-        FlowRepository flowRepository = repositoryFactory.createFlowRepository();
-        Collection<FlowPath> flowPaths = flowPathRepository.findBySrcSwitch(switchId);
+        FlowPathRepository flowPathRepository = repositoryFactory.getFlowPathRepository();
+        FlowRepository flowRepository = repositoryFactory.getFlowRepository();
+        Collection<FlowPath> flowPaths = flowPathRepository.findBySrcSwitch(switchId, false);
         for (FlowPath flowPath : flowPaths) {
             if (flowPath.isForward()) {
                 if (flowPath.getFlow().isSrcWithMultiTable()) {
@@ -140,7 +140,7 @@ public class SwitchValidateFsm
         hasMultiTableFlows = !flowPathRepository.findBySegmentSwitchWithMultiTable(switchId, true).isEmpty()
                 || !flowRepository.findByEndpointSwitchWithMultiTableSupport(switchId).isEmpty();
 
-        IslRepository islRepository = repositoryFactory.createIslRepository();
+        IslRepository islRepository = repositoryFactory.getIslRepository();
         this.islPorts = islRepository.findBySrcSwitch(switchId).stream()
                 .map(Isl::getSrcPort)
                 .collect(Collectors.toList());

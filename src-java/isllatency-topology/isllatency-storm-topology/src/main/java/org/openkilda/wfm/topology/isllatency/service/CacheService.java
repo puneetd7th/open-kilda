@@ -41,7 +41,7 @@ public class CacheService {
 
     public CacheService(CacheCarrier carrier, RepositoryFactory repositoryFactory) {
         this.carrier = carrier;
-        islRepository = repositoryFactory.createIslRepository();
+        islRepository = repositoryFactory.getIslRepository();
         cache = new HashMap<>();
         initCache();
     }
@@ -51,8 +51,8 @@ public class CacheService {
         try {
             islRepository.findAllActive()
                     .forEach(isl -> {
-                        Endpoint source = Endpoint.of(isl.getSrcSwitch().getSwitchId(), isl.getSrcPort());
-                        Endpoint destination = Endpoint.of(isl.getDestSwitch().getSwitchId(), isl.getDestPort());
+                        Endpoint source = Endpoint.of(isl.getSrcSwitchId(), isl.getSrcPort());
+                        Endpoint destination = Endpoint.of(isl.getDestSwitchId(), isl.getDestPort());
 
                         cache.put(source, destination);
                         cache.put(destination, source);
@@ -109,7 +109,7 @@ public class CacheService {
     private Endpoint updateCache(Endpoint source) throws IslNotFoundException, IllegalIslStateException {
         Isl isl = getNotMovedIsl(source);
 
-        Endpoint destination = Endpoint.of(isl.getDestSwitch().getSwitchId(), isl.getDestPort());
+        Endpoint destination = Endpoint.of(isl.getDestSwitchId(), isl.getDestPort());
 
         cache.put(source, destination);
         cache.put(destination, source);

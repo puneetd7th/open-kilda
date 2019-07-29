@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,7 +63,6 @@ import java.util.Optional;
 import java.util.Properties;
 
 public class ValidationServiceImplTest {
-
     private static final SwitchId SWITCH_ID_A = new SwitchId("00:10");
     private static final SwitchId SWITCH_ID_B = new SwitchId("00:20");
     private static final SwitchId SWITCH_ID_E = new SwitchId("00:30");
@@ -375,7 +375,6 @@ public class ValidationServiceImplTest {
 
     private static FlowPath buildFlowPath(Flow flow, Switch srcSwitch, Switch dstSwitch, String pathId, long cookie) {
         return FlowPath.builder()
-                .flow(flow)
                 .srcSwitch(srcSwitch)
                 .destSwitch(dstSwitch)
                 .pathId(new PathId(pathId))
@@ -393,7 +392,7 @@ public class ValidationServiceImplTest {
 
         private long[] segmentsCookies = new long[0];
         private long[] ingressCookies = new long[0];
-        private DetectConnectedDevices detectConnectedDevices = new DetectConnectedDevices();
+        private DetectConnectedDevices detectConnectedDevices = DetectConnectedDevices.builder().build();
 
         private PersistenceManagerBuilder withSegmentsCookies(long... cookies) {
             segmentsCookies = cookies;
@@ -416,7 +415,7 @@ public class ValidationServiceImplTest {
                 Flow flow = buildFlow(cookie, "flow_");
                 FlowPath flowPath = buildFlowPath(flow, switchA, switchB, "path_" + cookie, cookie);
                 flow.addPaths(flowPath);
-                flow.setForwardPath(flowPath.getPathId());
+                flow.setForwardPathId(flowPath.getPathId());
                 pathsBySegment.add(flowPath);
 
                 FlowPath flowOldPath = buildFlowPath(flow, switchA, switchB, "old_path_" + cookie, cookie + 10000);
@@ -428,7 +427,7 @@ public class ValidationServiceImplTest {
                 Flow flow = buildFlow(cookie, "flow_");
                 FlowPath flowPath = buildFlowPath(flow, switchA, switchB, "path_" + cookie, cookie);
                 flow.addPaths(flowPath);
-                flow.setForwardPath(flowPath.getPathId());
+                flow.setForwardPathId(flowPath.getPathId());
                 flowPaths.add(flowPath);
 
                 FlowPath flowOldPath = buildFlowPath(flow, switchA, switchB, "old_path_" + cookie, cookie + 10000);
@@ -436,7 +435,7 @@ public class ValidationServiceImplTest {
                 flowPaths.add(flowOldPath);
             }
             when(flowPathRepository.findBySegmentDestSwitch(any())).thenReturn(pathsBySegment);
-            when(flowPathRepository.findByEndpointSwitch(any())).thenReturn(flowPaths);
+            when(flowPathRepository.findByEndpointSwitch(any(), anyBoolean())).thenReturn(flowPaths);
 
             FlowPath flowPathA = mock(FlowPath.class);
             PathId flowAPathId = new PathId("flow_path_a");
@@ -482,18 +481,18 @@ public class ValidationServiceImplTest {
             when(flowB.isActualPathId(flowBPathId)).thenReturn(true);
             when(flowPathB.getFlow()).thenReturn(flowB);
 
-            when(flowPathRepository.findBySrcSwitch(eq(SWITCH_ID_B)))
+            when(flowPathRepository.findBySrcSwitch(eq(SWITCH_ID_B), anyBoolean()))
                     .thenReturn(singletonList(flowPathA));
-            when(flowPathRepository.findBySrcSwitch(eq(SWITCH_ID_E)))
+            when(flowPathRepository.findBySrcSwitch(eq(SWITCH_ID_E), anyBoolean()))
                     .thenReturn(singletonList(flowPathB));
 
             RepositoryFactory repositoryFactory = mock(RepositoryFactory.class);
-            when(repositoryFactory.createFlowPathRepository()).thenReturn(flowPathRepository);
+            when(repositoryFactory.getFlowPathRepository()).thenReturn(flowPathRepository);
 
             when(switchRepository.findById(SWITCH_ID_A)).thenReturn(Optional.of(switchA));
             when(switchRepository.findById(SWITCH_ID_B)).thenReturn(Optional.of(switchB));
             when(switchRepository.findById(SWITCH_ID_E)).thenReturn(Optional.of(switchE));
-            when(repositoryFactory.createSwitchRepository()).thenReturn(switchRepository);
+            when(repositoryFactory.getSwitchRepository()).thenReturn(switchRepository);
 
             PersistenceManager persistenceManager = mock(PersistenceManager.class);
             when(persistenceManager.getRepositoryFactory()).thenReturn(repositoryFactory);

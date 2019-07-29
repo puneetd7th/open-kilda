@@ -44,7 +44,7 @@ public class BaseFlowService {
     public BaseFlowService(PersistenceManager persistenceManager, FlowResourcesManager flowResourcesManager) {
         transactionManager = persistenceManager.getTransactionManager();
         RepositoryFactory repositoryFactory = persistenceManager.getRepositoryFactory();
-        flowRepository = repositoryFactory.createFlowRepository();
+        flowRepository = repositoryFactory.getFlowRepository();
         this.flowResourcesManager = flowResourcesManager;
     }
 

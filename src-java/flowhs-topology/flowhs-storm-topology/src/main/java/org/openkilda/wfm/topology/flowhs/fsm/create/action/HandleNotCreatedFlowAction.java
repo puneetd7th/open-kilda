@@ -35,7 +35,7 @@ public class HandleNotCreatedFlowAction extends
 
     public HandleNotCreatedFlowAction(PersistenceManager persistenceManager,
                                       FlowOperationsDashboardLogger dashboardLogger) {
-        this.flowRepository = persistenceManager.getRepositoryFactory().createFlowRepository();
+        this.flowRepository = persistenceManager.getRepositoryFactory().getFlowRepository();
         this.dashboardLogger = dashboardLogger;
     }
 

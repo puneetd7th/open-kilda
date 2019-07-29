@@ -30,17 +30,16 @@ import org.openkilda.model.Isl;
 import org.openkilda.model.IslStatus;
 import org.openkilda.model.Switch;
 import org.openkilda.model.SwitchId;
-import org.openkilda.persistence.Neo4jBasedTest;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 import org.openkilda.persistence.repositories.IslRepository;
 import org.openkilda.persistence.repositories.SwitchRepository;
 import org.openkilda.wfm.share.model.Endpoint;
 import org.openkilda.wfm.topology.isllatency.carriers.CacheCarrier;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CacheServiceTest extends Neo4jBasedTest {
+public class CacheServiceTest extends InMemoryGraphBasedTest {
     private static final SwitchId SWITCH_ID_1 = new SwitchId("00:00:00:00:00:00:00:01");
     private static final SwitchId SWITCH_ID_2 = new SwitchId("00:00:00:00:00:00:00:02");
     private static final int PORT_1 = 1;
@@ -55,8 +54,10 @@ public class CacheServiceTest extends Neo4jBasedTest {
 
     @Before
     public void setup() {
-        switchRepository = persistenceManager.getRepositoryFactory().createSwitchRepository();
-        islRepository = persistenceManager.getRepositoryFactory().createIslRepository();
+        cleanTinkerGraph();
+
+        switchRepository = persistenceManager.getRepositoryFactory().getSwitchRepository();
+        islRepository = persistenceManager.getRepositoryFactory().getIslRepository();
 
         Switch firstSwitch = createSwitch(SWITCH_ID_1);
         Switch secondSwitch = createSwitch(SWITCH_ID_2);
@@ -66,13 +67,6 @@ public class CacheServiceTest extends Neo4jBasedTest {
 
         carrier = mock(CacheCarrier.class);
         cacheService = new CacheService(carrier, persistenceManager.getRepositoryFactory());
-    }
-
-    @After
-    public void cleanUp() {
-        // force delete will delete all relations (including created ISL)
-        switchRepository.forceDelete(SWITCH_ID_1);
-        switchRepository.forceDelete(SWITCH_ID_2);
     }
 
     @Test()
@@ -181,7 +175,6 @@ public class CacheServiceTest extends Neo4jBasedTest {
             SwitchId srcSwitchId, int srcPort, SwitchId dstSwitchId, int dstPort, IslStatus status) {
         Isl isl = islRepository.findByEndpoints(srcSwitchId, srcPort, dstSwitchId, dstPort).get();
         isl.setStatus(status);
-        islRepository.createOrUpdate(isl);
     }
 
     private void checkHandleGetDataFromCacheDidNotCallEmitCacheData(IslRoundTripLatency islRoundTripLatency) {
@@ -196,10 +189,8 @@ public class CacheServiceTest extends Neo4jBasedTest {
     }
 
     private Switch createSwitch(SwitchId switchId) {
-        Switch sw = new Switch();
-        sw.setSwitchId(switchId);
-        switchRepository.createOrUpdate(sw);
-        return sw;
+        Switch sw = Switch.builder().switchId(switchId).build();
+        return switchRepository.add(sw);
     }
 
     private void createActiveIsl(Switch srcSwitch, int srcPort, Switch dstSwitch, int dstPort, long latency) {
@@ -213,8 +204,8 @@ public class CacheServiceTest extends Neo4jBasedTest {
                 .srcPort(srcPort)
                 .destSwitch(dstSwitch)
                 .destPort(dstPort)
-                .status(status)
                 .latency(latency).build();
-        islRepository.createOrUpdate(isl);
+        isl.setStatus(status);
+        islRepository.add(isl);
     }
 }

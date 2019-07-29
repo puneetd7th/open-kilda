@@ -19,7 +19,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class MeterIdTest {
-
     @Test
     public void createMeterIdForValidDefaultRuleTest() {
         for (long id = MeterId.MIN_SYSTEM_RULE_METER_ID; id <= MeterId.MAX_SYSTEM_RULE_METER_ID; id++) {

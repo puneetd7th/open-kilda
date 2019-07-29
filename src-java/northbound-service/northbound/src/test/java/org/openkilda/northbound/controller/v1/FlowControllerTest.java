@@ -36,9 +36,9 @@ import org.openkilda.messaging.error.MessageError;
 import org.openkilda.messaging.payload.flow.FlowIdStatusPayload;
 import org.openkilda.messaging.payload.flow.FlowPathPayload;
 import org.openkilda.messaging.payload.flow.FlowPayload;
-import org.openkilda.northbound.controller.NorthboundBaseTest;
 import org.openkilda.northbound.controller.TestConfig;
 import org.openkilda.northbound.utils.RequestCorrelationId;
+import org.openkilda.persistence.InMemoryGraphBasedTest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Before;
@@ -64,7 +64,7 @@ import java.util.concurrent.TimeUnit;
 @WebAppConfiguration
 @ContextConfiguration(classes = TestConfig.class)
 @TestPropertySource("classpath:northbound.properties")
-public class FlowControllerTest extends NorthboundBaseTest {
+public class FlowControllerTest extends InMemoryGraphBasedTest {
     private static final String USERNAME = "kilda";
     private static final String PASSWORD = "kilda";
     private static final String ROLE = "ADMIN";
@@ -81,6 +81,8 @@ public class FlowControllerTest extends NorthboundBaseTest {
 
     @Before
     public void setUp() throws Exception {
+        cleanTinkerGraph();
+
         this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
         RequestCorrelationId.create(DEFAULT_CORRELATION_ID);
     }
@@ -193,7 +195,8 @@ public class FlowControllerTest extends NorthboundBaseTest {
                 .andReturn();
         List<FlowPayload> response = MAPPER.readValue(
                 result.getResponse().getContentAsString(),
-                new TypeReference<List<FlowPayload>>() {});
+                new TypeReference<List<FlowPayload>>() {
+                });
         assertEquals(Collections.singletonList(TestMessageMock.flow), response);
     }
 

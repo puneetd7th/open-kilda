@@ -36,7 +36,6 @@ import org.openkilda.pce.exception.UnroutableFlowException;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.UUID;
 
 public class CostPathComputationStrategyTest extends InMemoryPathComputerBaseTest {
@@ -240,13 +239,14 @@ public class CostPathComputationStrategyTest extends InMemoryPathComputerBaseTes
 
         Flow flow = Flow.builder()
                 .flowId("new-flow")
-                .groupId("diverse")
                 .bandwidth(10)
                 .srcSwitch(getSwitchById("00:0A"))
                 .destSwitch(getSwitchById("00:0D"))
                 .encapsulationType(FlowEncapsulationType.TRANSIT_VLAN)
-                .pathComputationStrategy(PathComputationStrategy.COST)
                 .build();
+        flow.setGroupId("diverse");
+        flow.setPathComputationStrategy(PathComputationStrategy.COST);
+
         PathComputer pathComputer = pathComputerFactory.getPathComputer();
         PathPair diversePath = pathComputer.getPath(flow);
 
@@ -263,15 +263,16 @@ public class CostPathComputationStrategyTest extends InMemoryPathComputerBaseTes
 
         Flow flow = Flow.builder()
                 .flowId("new-flow")
-                .groupId("diverse")
                 .bandwidth(10)
                 .srcSwitch(getSwitchById("00:0A"))
                 .srcPort(10)
                 .destSwitch(getSwitchById("00:0D"))
                 .destPort(10)
                 .encapsulationType(FlowEncapsulationType.TRANSIT_VLAN)
-                .pathComputationStrategy(PathComputationStrategy.COST)
                 .build();
+        flow.setGroupId("diverse");
+        flow.setPathComputationStrategy(PathComputationStrategy.COST);
+
         PathComputer pathComputer = pathComputerFactory.getPathComputer();
         PathPair diversePath = pathComputer.getPath(flow);
 
@@ -279,9 +280,7 @@ public class CostPathComputationStrategyTest extends InMemoryPathComputerBaseTes
                 .pathId(new PathId(UUID.randomUUID().toString()))
                 .srcSwitch(flow.getSrcSwitch())
                 .destSwitch(flow.getDestSwitch())
-                .flow(flow)
                 .bandwidth(flow.getBandwidth())
-                .segments(new ArrayList<>())
                 .build();
         addPathSegments(forwardPath, diversePath.getForward());
         flow.setForwardPath(forwardPath);
@@ -290,16 +289,14 @@ public class CostPathComputationStrategyTest extends InMemoryPathComputerBaseTes
                 .pathId(new PathId(UUID.randomUUID().toString()))
                 .srcSwitch(flow.getDestSwitch())
                 .destSwitch(flow.getSrcSwitch())
-                .flow(flow)
                 .bandwidth(flow.getBandwidth())
-                .segments(new ArrayList<>())
                 .build();
         addPathSegments(reversePath, diversePath.getReverse());
         flow.setReversePath(reversePath);
 
-        flowRepository.createOrUpdate(flow);
+        flowRepository.add(flow);
 
-        PathPair path2 = pathComputer.getPath(flow, flow.getFlowPathIds());
+        PathPair path2 = pathComputer.getPath(flow, flow.getPathIds());
         assertEquals(diversePath, path2);
     }
 }
