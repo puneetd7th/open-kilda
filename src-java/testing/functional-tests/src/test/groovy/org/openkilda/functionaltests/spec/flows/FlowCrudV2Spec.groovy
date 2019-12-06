@@ -66,6 +66,43 @@ class FlowCrudV2Spec extends HealthCheckSpecification {
         "The port $port on the switch '$swId' is occupied by an ISL ($endpoint endpoint collision)."
     }
 
+    def "System marks flow as UP when and only when all the rules are actually set on all involved switches"() {
+        given: "Two active not neighbouring switches"
+        def switchPair = topologyHelper.getNotNeighboringSwitchPair()
+        def isMultiTableEnabledOnSrcSw = northbound.getSwitchProperties(switchPair.src.dpId).multiTable
+        def isMultiTableEnabledOnDstSw = northbound.getSwitchProperties(switchPair.dst.dpId).multiTable
+
+        when: "Create a flow"
+        def flow = flowHelperV2.randomFlow(switchPair)
+        northboundV2.addFlow(flow)
+
+        then: "Flow is created"
+        Wrappers.wait(WAIT_OFFSET) { assert northbound.getFlowStatus(flow.flowId).status == FlowState.UP }
+
+        and: "All needed rules are installed on all involved switches"
+        def flowInfo = database.getFlow(flow.flowId)
+        def flowCookies = [flowInfo.forwardPath.cookie.value, flowInfo.reversePath.cookie.value]
+        def realCookiesOnSrcSw = []
+        def realCookiesOnDstSw = []
+        flowCookies.each { cookie ->
+            realCookiesOnSrcSw << flowHelperV2.getRealCookie(switchPair.src.dpId, cookie)
+            realCookiesOnDstSw << flowHelperV2.getRealCookie(switchPair.dst.dpId, cookie)
+        }
+        def rulesOnSrcSw = northbound.getSwitchRules(switchPair.src.dpId).flowEntries*.cookie
+        rulesOnSrcSw.containsAll(realCookiesOnSrcSw)
+        def rulesOnDstSw = northbound.getSwitchRules(switchPair.dst.dpId).flowEntries*.cookie
+        rulesOnDstSw.containsAll(realCookiesOnDstSw)
+        if (isMultiTableEnabledOnSrcSw) {
+            !rulesOnSrcSw.findAll { Cookie.isIngressRulePassThrough(it) }.empty
+        }
+        if (isMultiTableEnabledOnDstSw) {
+            !rulesOnDstSw.findAll { Cookie.isIngressRulePassThrough(it) }.empty
+        }
+
+        and: "Cleanup: Delete the flow"
+        flowHelperV2.deleteFlow(flow.flowId)
+    }
+
     @Tags([TOPOLOGY_DEPENDENT])
     @IterationTags([
             @IterationTag(tags = [SMOKE], iterationNameRegex = /vlan /),
