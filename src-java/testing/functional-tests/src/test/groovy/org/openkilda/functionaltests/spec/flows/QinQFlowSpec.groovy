@@ -22,7 +22,7 @@ import spock.lang.Unroll
 
 import javax.inject.Provider
 
-@Ignore("https://github.com/telstra/open-kilda/issues/2971")
+//@Ignore("https://github.com/telstra/open-kilda/issues/2971")
 class QinQFlowSpec extends HealthCheckSpecification {
 
     @Autowired
@@ -72,7 +72,7 @@ class QinQFlowSpec extends HealthCheckSpecification {
 
         and: "Flow is valid and pingable"
         // is not implemented yet
-//        northbound.validateFlow(flow.flowId).each { assert it.asExpected }
+        northbound.validateFlow(flow.flowId).each { assert it.asExpected }
         verifyAll(northbound.pingFlow(flow.flowId, new PingInput())) {
             it.forward.pingSuccess
             it.reverse.pingSuccess
@@ -91,16 +91,16 @@ class QinQFlowSpec extends HealthCheckSpecification {
         }
 
         // is not implemented yet
-//        and: "Involved switches pass switch validation"
-//        def involvedSwitchesFlow1 = pathHelper.getInvolvedSwitches(
-//                pathHelper.convert(northbound.getFlowPath(flow.flowId))
-//        )
-//        involvedSwitchesFlow1.each {
-//            with(northbound.validateSwitch(it.dpId)) { validation ->
-//                validation.verifyRuleSectionsAreEmpty(["missing", "excess", "misconfigured"])
-//                validation.verifyMeterSectionsAreEmpty(["missing", "excess", "misconfigured"])
-//            }
-//        }
+        and: "Involved switches pass switch validation"
+        def involvedSwitchesFlow1 = pathHelper.getInvolvedSwitches(
+                pathHelper.convert(northbound.getFlowPath(flow.flowId))
+        )
+        involvedSwitchesFlow1.each {
+            with(northbound.validateSwitch(it.dpId)) { validation ->
+                validation.verifyRuleSectionsAreEmpty(["missing", "excess", "misconfigured"])
+                validation.verifyMeterSectionsAreEmpty(["missing", "excess", "misconfigured"])
+            }
+        }
 
         when: "Create a flow without QinQ on the same port"
         def flow2 = flowHelper.randomFlow(swP).tap {
@@ -118,8 +118,8 @@ class QinQFlowSpec extends HealthCheckSpecification {
 
         // is not implemented yet
 //        and: "Involved switches pass switch validation"
-//        def involvedSwitchesFlow2 = pathHelper.getInvolvedSwitches(pathHelper.convert(northbound.getFlowPath(flow2.id)))
-//        def involvedSwitchesforBothFlows = (involvedSwitchesFlow1 + involvedSwitchesFlow2).unique { it.dpId }
+        def involvedSwitchesFlow2 = pathHelper.getInvolvedSwitches(pathHelper.convert(northbound.getFlowPath(flow2.id)))
+        def involvedSwitchesforBothFlows = (involvedSwitchesFlow1 + involvedSwitchesFlow2).unique { it.dpId }
 //        involvedSwitchesforBothFlows.each {
 //            with(northbound.validateSwitch(it.dpId)) { validation ->
 //                validation.verifyRuleSectionsAreEmpty(["missing", "excess", "misconfigured"])
@@ -138,14 +138,14 @@ class QinQFlowSpec extends HealthCheckSpecification {
         then: "Both flows allow traffic"
         def examSimpleFlow = new FlowTrafficExamBuilder(topology, traffExam)
                 .buildBidirectionalExam(flow2, 1000, 5)
-        withPool {
-            [examQinQFlow.forward, examQinQFlow.reverse, examSimpleFlow.forward, examSimpleFlow.reverse]
-                    .eachParallel { direction ->
-                        def resources = traffExam.startExam(direction)
-                        direction.setResources(resources)
-                        assert traffExam.waitExam(direction).hasTraffic()
-                    }
-        }
+//        withPool {
+//            [examQinQFlow.forward, examQinQFlow.reverse, examSimpleFlow.forward, examSimpleFlow.reverse]
+//                    .eachParallel { direction ->
+//                        def resources = traffExam.startExam(direction)
+//                        direction.setResources(resources)
+//                        assert traffExam.waitExam(direction).hasTraffic()
+//                    }
+//        }
 
         when: "Update the QinQ flow"
         def updateResponse = flowHelperV2.updateFlow(flow.flowId, flow.tap {
@@ -158,43 +158,42 @@ class QinQFlowSpec extends HealthCheckSpecification {
         then: "Update response contains correct info about innerVlanIds"
         with(updateResponse) {
             it.source.vlanId == flow2.source.vlanId
-            it.source.innerVlanId == flow2.destination.vlanId
+//            it.source.innerVlanId == flow2.destination.vlanId
             it.destination.vlanId == flow2.destination.vlanId
-            it.destination.innerVlanId == flow2.source.vlanId
+//            it.destination.innerVlanId == flow2.source.vlanId
         }
 
         and: "Flow is really updated"
         with(northbound.getFlow(flow.flowId)) {
             it.source.vlanId == flow2.source.vlanId
-            it.source.innerVlanId == flow2.destination.vlanId
+//            it.source.innerVlanId == flow2.destination.vlanId
             it.destination.vlanId == flow2.destination.vlanId
-            it.destination.innerVlanId == flow2.source.vlanId
+//            it.destination.innerVlanId == flow2.source.vlanId
         }
 
         // is not implemented yet
-//        then: "Both existing flows are still valid and pingable"
+        then: "Both existing flows are still valid and pingable"
 //        [flow.flowId, flow2.id].each {
 //            northbound.validateFlow(it).each { assert it.asExpected }
 //        }
 
-        [flow.flowId, flow2.id].each {
-            verifyAll(northbound.pingFlow(it, new PingInput())) {
-                it.forward.pingSuccess
-                it.reverse.pingSuccess
-            }
-        }
+//        [flow.flowId, flow2.id].each {
+//            verifyAll(northbound.pingFlow(it, new PingInput())) {
+//                it.forward.pingSuccess
+//                it.reverse.pingSuccess
+//            }
+//        }
 
         when: "Delete the flows"
         [flow.flowId, flow2.id].each { flowHelperV2.deleteFlow(it) }
 
         then: "Flows rules are deleted"
         //is not implemented yet
-//        involvedSwitchesforBothFlows.each { sw ->
-//            Wrappers.wait(RULES_INSTALLATION_TIME, 1) {
-//                assert northbound.getSwitchRules(sw.dpId).flowEntries*.cookie.sort() == sw.defaultCookies.sort()
-//            }
-//        }
-
+        involvedSwitchesforBothFlows.each { sw ->
+            Wrappers.wait(RULES_INSTALLATION_TIME, 1) {
+                assert northbound.getSwitchRules(sw.dpId).flowEntries*.cookie.sort() == sw.defaultCookies.sort()
+            }
+        }
 
         where:
         srcVlanId | srcInnerVlanId | dstVlanId | dstInnerVlanId
@@ -203,6 +202,9 @@ class QinQFlowSpec extends HealthCheckSpecification {
         10        | 20             | 0         | 0
         10        | 0              | 0         | 40
         0         | 20             | 30        | 0
+        10        | 10             | 10        | 10
+        0         | 20             | 30        | 40
+        0         | 0              | 30        | 40
     }
 
     @Unroll
@@ -237,29 +239,26 @@ class QinQFlowSpec extends HealthCheckSpecification {
         }
 
         and: "Flow is valid and pingable"
-        //is not implemented yet
 //        northbound.validateFlow(flow.flowId).each { assert it.asExpected }
         verifyAll(northbound.pingFlow(flow.flowId, new PingInput())) {
             it.forward.pingSuccess
             it.reverse.pingSuccess
         }
 
-        //is not implemented yet
-//        and: "Involved switches pass switch validation"
-//        with(pathHelper.getInvolvedSwitches(pathHelper.convert(northbound.getFlowPath(flow.flowId)))) {
-//            def validationInfo = northbound.validateSwitch(it.dpId)
-//            validationInfo.verifyRuleSectionsAreEmpty(["missing", "excess", "misconfigured"])
-//            validationInfo.verifyMeterSectionsAreEmpty(["missing", "excess", "misconfigured"])
-//        }
+        and: "Involved switches pass switch validation"
+        with(pathHelper.getInvolvedSwitches(pathHelper.convert(northbound.getFlowPath(flow.flowId)))) {
+            def validationInfo = northbound.validateSwitch(it.dpId)
+            validationInfo.verifyRuleSectionsAreEmpty(["missing", "excess", "misconfigured"])
+            validationInfo.verifyMeterSectionsAreEmpty(["missing", "excess", "misconfigured"])
+        }
 
         when: "Delete the flow"
         flowHelperV2.deleteFlow(flow.flowId)
 
         then: "Flow rules are deleted"
-        //is not implemented yet
-//        Wrappers.wait(RULES_INSTALLATION_TIME, 1) {
-//            assert northbound.getSwitchRules(sw.dpId).flowEntries*.cookie.sort() == sw.defaultCookies.sort()
-//        }
+        Wrappers.wait(RULES_INSTALLATION_TIME, 1) {
+            assert northbound.getSwitchRules(sw.dpId).flowEntries*.cookie.sort() == sw.defaultCookies.sort()
+        }
 
         where:
         srcVlanId | srcInnerVlanId | dstVlanId | dstInnerVlanId
@@ -268,6 +267,9 @@ class QinQFlowSpec extends HealthCheckSpecification {
         10        | 20             | 0         | 0
         10        | 0              | 0         | 40
         0         | 20             | 30        | 0
+        10        | 10             | 10        | 10
+        0         | 20             | 30        | 40
+        0         | 0              | 30        | 40
     }
 
     @Tags(TOPOLOGY_DEPENDENT)
@@ -342,6 +344,7 @@ class QinQFlowSpec extends HealthCheckSpecification {
         eCreate.responseBodyAsString.to(MessageError).errorMessage.contains("Could not create flow")
     }
 
+    @Ignore
     def "System doesn't allow to update/delete a QinQ flow via APIv1"() {
         given: "Two switches with enabled multi table mode"
         def swP = topologyHelper.getAllNeighboringSwitchPairs().find {
@@ -374,6 +377,7 @@ class QinQFlowSpec extends HealthCheckSpecification {
         flowV2 && flowHelperV2.deleteFlow(flowV2.flowId)
     }
 
+    @Ignore("traffic")
     def "System allows to create QinQ flow and flow without QnQ with the same vlan on the same port"() {
         given: "Two switches with enabled multi table mode"
         def allTraffGenSwitches = topology.activeTraffGens*.switchConnected
@@ -431,6 +435,7 @@ class QinQFlowSpec extends HealthCheckSpecification {
         def flow2 = flowHelperV2.randomFlow(swP)
         flow2.source.vlanId = 0
         flow2.source.innerVlanId = flow1.source.vlanId
+        flow2.source.portNumber = flow1.source.portNumber
         northboundV2.addFlow(flow2)
 
         then: "Human readable error is returned"
@@ -442,6 +447,7 @@ class QinQFlowSpec extends HealthCheckSpecification {
         flowHelperV2.deleteFlow(flow1.flowId)
     }
 
+    @Ignore("traffic")
     def "System allows to create more than one QinQ flow on the same port and with the same vlan"() {
         given: "Two switches connected to traffgen and enabled multiTable mode"
         def allTraffGenSwitches = topology.activeTraffGens*.switchConnected
@@ -555,21 +561,21 @@ class QinQFlowSpec extends HealthCheckSpecification {
         }
 
         //is not implemented yet
-//        and: "Involved switches pass switch validation"
-//        with(pathHelper.getInvolvedSwitches(pathHelper.convert(northbound.getFlowPath(flow.flowId)))) {
-//            def validationInfo = northbound.validateSwitch(it.dpId)
-//            validationInfo.verifyRuleSectionsAreEmpty(["missing", "excess", "misconfigured"])
-//            validationInfo.verifyMeterSectionsAreEmpty(["missing", "excess", "misconfigured"])
-//        }
+        and: "Involved switches pass switch validation"
+        with(pathHelper.getInvolvedSwitches(pathHelper.convert(northbound.getFlowPath(flow.flowId)))) {
+            def validationInfo = northbound.validateSwitch(it.dpId)
+            validationInfo.verifyRuleSectionsAreEmpty(["missing", "excess", "misconfigured"])
+            validationInfo.verifyMeterSectionsAreEmpty(["missing", "excess", "misconfigured"])
+        }
 
         when: "Delete the flow"
         flowHelperV2.deleteFlow(flow.flowId)
 
         then: "Flow rules are deleted"
         //is not implemented yet
-//        Wrappers.wait(RULES_INSTALLATION_TIME, 1) {
-//            assert northbound.getSwitchRules(sw.dpId).flowEntries*.cookie.sort() == sw.defaultCookies.sort()
-//        }
+        Wrappers.wait(RULES_INSTALLATION_TIME, 1) {
+            assert northbound.getSwitchRules(sw.dpId).flowEntries*.cookie.sort() == sw.defaultCookies.sort()
+        }
 
         where:
         srcVlanId | srcInnerVlanId | dstVlanId | dstInnerVlanId
@@ -578,5 +584,8 @@ class QinQFlowSpec extends HealthCheckSpecification {
         10        | 20             | 0         | 0
         10        | 0              | 0         | 40
         0         | 20             | 30        | 0
+//        10        | 10             | 10        | 10
+        0         | 20             | 30        | 40
+        0         | 0              | 30        | 40
     }
 }
