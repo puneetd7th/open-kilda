@@ -1,7 +1,6 @@
 package org.openkilda.functionaltests.spec.flows
 
 import static groovyx.gpars.GParsPool.withPool
-import static org.junit.Assume.assumeTrue
 import static org.openkilda.functionaltests.extension.tags.Tag.HARDWARE
 import static org.openkilda.functionaltests.extension.tags.Tag.SMOKE
 import static org.openkilda.functionaltests.extension.tags.Tag.SMOKE_SWITCHES
@@ -47,10 +46,8 @@ import groovy.transform.AutoClone
 import groovy.transform.Memoized
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
-import spock.lang.Ignore
 import spock.lang.Narrative
 import spock.lang.See
 import spock.lang.Unroll
@@ -63,9 +60,6 @@ Verify ability to detect connected devices per flow endpoint (src/dst).
 Verify allocated Connected Devices resources and installed rules.""")
 @See("https://github.com/telstra/open-kilda/tree/develop/docs/design/connected-devices-lldp")
 class ConnectedDevicesSpec extends HealthCheckSpecification {
-
-    @Value('${use.multitable}')
-    boolean useMultiTable
 
     @Autowired
     Provider<TraffExamService> traffExamProvider
@@ -466,11 +460,6 @@ srcDevices=#newSrcEnabled, dstDevices=#newDstEnabled"() {
 
         and: "Restore initial switch properties"
         restoreSwitchProperties(flow.source.datapath, initialSrcProps)
-
-        and: "Cleanup LLDP meters because feature https://github.com/telstra/open-kilda/issues/2969 is not implemented yet"
-        if (!useMultiTable) {
-            cleanupLldpMeters(flow.source.datapath)
-        }
     }
 
     @Tidy
@@ -526,7 +515,7 @@ srcDevices=#newSrcEnabled, dstDevices=#newDstEnabled"() {
         restoreSwitchProperties(flow.destination.datapath, initialDstProps)
     }
 
-    @Tidy
+    @Tidy //test
     def "Able to detect different devices on the same port (ARP)"() {
         given: "Switches with turned 'on' multiTable property"
         def flow = getFlowWithConnectedDevices(false, false, false, true)
@@ -578,11 +567,6 @@ srcDevices=#newSrcEnabled, dstDevices=#newDstEnabled"() {
 
         and: "Restore initial switch properties"
         restoreSwitchProperties(flow.destination.datapath, initialDstProps)
-
-        and: "Cleanup LLDP meters because feature https://github.com/telstra/open-kilda/issues/2969 is not implemented yet"
-        if (!useMultiTable) {
-            cleanupLldpMeters(flow.destination.datapath)
-        }
     }
 
     @Tidy
