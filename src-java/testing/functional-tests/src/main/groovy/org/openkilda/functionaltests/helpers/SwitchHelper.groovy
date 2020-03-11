@@ -177,8 +177,11 @@ class SwitchHelper {
         if (swProps.multiTable) {
             result << MeterId.createMeterIdForDefaultRule(LLDP_POST_INGRESS_COOKIE) //16
             result << MeterId.createMeterIdForDefaultRule(LLDP_POST_INGRESS_ONE_SWITCH_COOKIE) //18
+            result << MeterId.createMeterIdForDefaultRule(ARP_POST_INGRESS_COOKIE) //22
+            result << MeterId.createMeterIdForDefaultRule(ARP_POST_INGRESS_ONE_SWITCH_COOKIE) //24
             if (sw.features.contains(SwitchFeature.NOVIFLOW_PUSH_POP_VXLAN)) {
                 result << MeterId.createMeterIdForDefaultRule(LLDP_POST_INGRESS_VXLAN_COOKIE) //17
+                result << MeterId.createMeterIdForDefaultRule(ARP_POST_INGRESS_VXLAN_COOKIE) //23
             }
         }
         if (swProps.switchLldp) {
