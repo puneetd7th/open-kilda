@@ -13,13 +13,13 @@
  *   limitations under the License.
  */
 
-package org.openkilda.floodlight.utils.metadata;
+package org.openkilda.model.cookie;
 
-public class RoutingMetadata32 extends RoutingMetadata {
-    /**
-     * Must raise error for fields not available in 32 bits schema.
-     */
-    protected RoutingMetadata32(Boolean lldpFlag, Boolean arpFlag, Boolean oneSwitchFlowFlag, Integer outerVlanId) {
-        super(lldpFlag, arpFlag, oneSwitchFlowFlag, outerVlanId);
+import org.junit.Test;
+
+public class FlowSharedSegmentCookieTest extends GenericCookieTest {
+    @Test
+    public void ensureNoFieldsIntersection() {
+        testFieldsIntersection(FlowSharedSegmentCookie.ALL_FIELDS);
     }
 }

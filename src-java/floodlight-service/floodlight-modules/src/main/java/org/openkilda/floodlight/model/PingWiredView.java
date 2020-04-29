@@ -15,23 +15,18 @@
 
 package org.openkilda.floodlight.model;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy.SnakeCaseStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.google.common.collect.ImmutableList;
+import lombok.Value;
 
-import java.io.Serializable;
+import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonNaming(value = SnakeCaseStrategy.class)
-@Builder
-public class RulesContext implements Serializable {
-    private boolean removeCustomerCatchRule;
-    private boolean removeCustomerLldpRule;
-    private boolean removeCustomerArpRule;
-    private boolean removeOuterVlanMatchSharedRule;
+@Value
+public class PingWiredView {
+    List<Integer> vlanStack;
+    byte[] payload;
+
+    public PingWiredView(List<Integer> vlanStack, byte[] payload) {
+        this.vlanStack = ImmutableList.copyOf(vlanStack);
+        this.payload = payload;
+    }
 }
