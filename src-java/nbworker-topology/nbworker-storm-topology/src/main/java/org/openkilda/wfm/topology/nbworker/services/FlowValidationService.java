@@ -270,7 +270,7 @@ public class FlowValidationService {
             discrepancies.add(new PathDiscrepancyEntity(expected.toString(), "outPort",
                     String.valueOf(expected.getOutPort()), String.valueOf(matched.getOutPort())));
         }
-        if (matched.getOutVlan() != expected.getOutVlan()) {
+        if (! Objects.equals(matched.getOutVlan(), expected.getOutVlan())) {
             discrepancies.add(new PathDiscrepancyEntity(expected.toString(), "outVlan",
                     String.valueOf(expected.getOutVlan()), String.valueOf(matched.getOutVlan())));
         }

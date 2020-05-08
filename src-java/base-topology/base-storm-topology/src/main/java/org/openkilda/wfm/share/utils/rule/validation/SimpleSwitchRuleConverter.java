@@ -15,6 +15,7 @@
 
 package org.openkilda.wfm.share.utils.rule.validation;
 
+import org.openkilda.adapter.FlowSideAdapter;
 import org.openkilda.messaging.info.meter.SwitchMeterEntries;
 import org.openkilda.messaging.info.rule.FlowApplyActions;
 import org.openkilda.messaging.info.rule.FlowEntry;
@@ -23,6 +24,7 @@ import org.openkilda.messaging.info.rule.SwitchFlowEntries;
 import org.openkilda.model.EncapsulationId;
 import org.openkilda.model.Flow;
 import org.openkilda.model.FlowEncapsulationType;
+import org.openkilda.model.FlowEndpoint;
 import org.openkilda.model.FlowPath;
 import org.openkilda.model.Meter;
 import org.openkilda.model.PathSegment;
@@ -66,14 +68,12 @@ public class SimpleSwitchRuleConverter {
         boolean forward = flow.isForward(flowPath);
         int inPort = forward ? flow.getSrcPort() : flow.getDestPort();
         int outPort = forward ? flow.getDestPort() : flow.getSrcPort();
-        int inVlan = forward ? flow.getSrcVlan() : flow.getDestVlan();
         int outVlan = forward ? flow.getDestVlan() : flow.getSrcVlan();
 
         SimpleSwitchRule rule = SimpleSwitchRule.builder()
                 .switchId(flowPath.getSrcSwitch().getSwitchId())
                 .cookie(flowPath.getCookie().getValue())
                 .inPort(inPort)
-                .inVlan(inVlan)
                 .meterId(flowPath.getMeterId() != null ? flowPath.getMeterId().getValue() : null)
                 .meterRate(flow.getBandwidth())
                 .meterBurstSize(Meter.calculateBurstSize(flow.getBandwidth(), flowMeterMinBurstSizeInKbits,
@@ -81,9 +81,20 @@ public class SimpleSwitchRuleConverter {
                 .meterFlags(Meter.getMeterKbpsFlags())
                 .build();
 
+        FlowSideAdapter ingress = FlowSideAdapter.makeIngressAdapter(flow, flowPath);
+        FlowEndpoint endpoint = ingress.getEndpoint();
+        if (ingress.isMultiTableSegment()) {
+            // in multi-table mode actual ingress rule will match port+inner_vlan+metadata(outer_vlan)
+            if (FlowEndpoint.isVlanIdSet(endpoint.getInnerVlanId())) {
+                rule.setInVlan(endpoint.getInnerVlanId());
+            }
+        } else {
+            rule.setInVlan(endpoint.getOuterVlanId());
+        }
+
         if (flow.isOneSwitchFlow()) {
             rule.setOutPort(outPort);
-            rule.setOutVlan(outVlan);
+            rule.setOutVlan(Collections.singletonList(outVlan));
 
         } else {
             PathSegment ingressSegment = flowPath.getSegments().stream()
@@ -96,7 +107,7 @@ public class SimpleSwitchRuleConverter {
 
             rule.setOutPort(ingressSegment.getSrcPort());
             if (flow.getEncapsulationType().equals(FlowEncapsulationType.TRANSIT_VLAN)) {
-                rule.setOutVlan(encapsulationId.getEncapsulationId());
+                rule.setOutVlan(Collections.singletonList(encapsulationId.getEncapsulationId()));
             } else if (flow.getEncapsulationType().equals(FlowEncapsulationType.VXLAN)) {
                 rule.setTunnelId(encapsulationId.getEncapsulationId());
             }
@@ -155,14 +166,11 @@ public class SimpleSwitchRuleConverter {
     private SimpleSwitchRule buildEgressSimpleSwitchRule(Flow flow, FlowPath flowPath,
                                                          PathSegment egressSegment,
                                                          EncapsulationId encapsulationId) {
-        boolean forward = flow.isForward(flowPath);
-        int outPort = forward ? flow.getDestPort() : flow.getSrcPort();
-        int outVlan = forward ? flow.getDestVlan() : flow.getSrcVlan();
-
+        FlowEndpoint endpoint = FlowSideAdapter.makeEgressAdapter(flow, flowPath).getEndpoint();
         SimpleSwitchRule rule = SimpleSwitchRule.builder()
                 .switchId(flowPath.getDestSwitch().getSwitchId())
-                .outPort(outPort)
-                .outVlan(outVlan)
+                .outPort(endpoint.getPortNumber())
+                .outVlan(endpoint.getVlanStack())
                 .inPort(egressSegment.getDestPort())
                 .cookie(flowPath.getCookie().getValue())
                 .build();
@@ -211,15 +219,14 @@ public class SimpleSwitchRuleConverter {
         if (flowEntry.getInstructions() != null) {
             if (flowEntry.getInstructions().getApplyActions() != null) {
                 FlowApplyActions applyActions = flowEntry.getInstructions().getApplyActions();
-                rule.setOutVlan(Optional.ofNullable(applyActions.getSetFieldActions())
-                        .orElse(new ArrayList<>())
-                        .stream()
+                List<FlowSetFieldAction> setFields = Optional.ofNullable(applyActions.getSetFieldActions())
+                        .orElse(new ArrayList<>());
+                rule.setOutVlan(setFields.stream()
                         .filter(Objects::nonNull)
                         .filter(action -> VLAN_VID.equals(action.getFieldName()))
                         .map(FlowSetFieldAction::getFieldValue)
                         .map(NumberUtils::toInt)
-                        .findFirst()
-                        .orElse(NumberUtils.INTEGER_ZERO));
+                        .collect(Collectors.toList()));
                 String outPort = applyActions.getFlowOutput();
                 if (IN_PORT.equals(outPort) && flowEntry.getMatch() != null) {
                     outPort = flowEntry.getMatch().getInPort();

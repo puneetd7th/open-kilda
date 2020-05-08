@@ -195,7 +195,6 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentComman
                 .setInstructions(ImmutableList.of(
                         of.instructions().applyActions(ImmutableList.of(
                                 of.actions().noviflowPopVxlanTunnel(),
-                                of.actions().popVlan(),
                                 of.actions().buildOutput()
                                         .setPort(OFPort.of(command.getEndpoint().getPortNumber()))
                                         .build()))))
@@ -221,6 +220,7 @@ public class EgressFlowSegmentInstallCommandTest extends EgressFlowSegmentComman
                 .setInstructions(ImmutableList.of(
                         of.instructions().applyActions(ImmutableList.of(
                                 of.actions().noviflowPopVxlanTunnel(),
+                                of.actions().pushVlan(EthType.VLAN_FRAME),
                                 OfAdapter.INSTANCE.setVlanIdAction(of, command.getEndpoint().getOuterVlanId()),
                                 of.actions().buildOutput()
                                         .setPort(OFPort.of(command.getEndpoint().getPortNumber()))

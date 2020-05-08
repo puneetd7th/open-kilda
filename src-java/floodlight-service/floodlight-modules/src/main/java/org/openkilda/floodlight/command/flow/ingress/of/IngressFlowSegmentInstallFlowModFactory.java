@@ -69,9 +69,10 @@ abstract class IngressFlowSegmentInstallFlowModFactory extends IngressInstallFlo
     }
 
     private List<OFAction> makeVxLanEncapsulationTransformActions(List<Integer> vlanStack) {
-        // restore vlan stack (if it was touched)
+        // Remove any remaining vlan's, because egress switch will reject vlan manipulation on flow that have no
+        // vlan header matches
         List<OFAction> actions = new ArrayList<>(
-                OfAdapter.INSTANCE.makeVlanReplaceActions(of, vlanStack, command.getEndpoint().getVlanStack()));
+                OfAdapter.INSTANCE.makeVlanReplaceActions(of, vlanStack, Collections.emptyList()));
 
         MacAddress l2src = MacAddress.of(sw.getId());
         actions.add(of.actions().buildNoviflowPushVxlanTunnel()

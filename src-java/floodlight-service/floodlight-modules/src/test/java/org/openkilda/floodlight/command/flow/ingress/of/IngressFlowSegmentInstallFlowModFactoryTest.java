@@ -91,11 +91,13 @@ abstract class IngressFlowSegmentInstallFlowModFactoryTest extends IngressFlowMo
         IngressFlowSegmentInstallCommand command = makeCommand(
                 endpointSingleVlan, meter, encapsulationVxLan);
 
+        List<OFAction> vlanTransformation = OfAdapter.INSTANCE.makeVlanReplaceActions(
+                of, command.getEndpoint().getVlanStack(), Collections.emptyList());
         OFFlowAdd expected = makeVxLanForwardingMessage(
                 command, 0,
                 OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), command.getEndpoint().getOuterVlanId())
                         .setExact(MatchField.IN_PORT, OFPort.of(command.getEndpoint().getPortNumber()))
-                        .build(), getTargetIngressTableId(), Collections.emptyList());
+                        .build(), getTargetIngressTableId(), vlanTransformation);
         IngressFlowModFactory factory = makeFactory(command);
         verifyOfMessageEquals(
                 expected, factory.makeOuterOnlyVlanForwardMessage(getEffectiveMeterId(command.getMeterConfig())));
@@ -219,8 +221,6 @@ abstract class IngressFlowSegmentInstallFlowModFactoryTest extends IngressFlowMo
         RoutingMetadata metadata = RoutingMetadata.builder()
                 .outerVlanId(endpoint.getOuterVlanId())
                 .build(Collections.emptySet());
-        List<OFAction> vlanTransformation = OfAdapter.INSTANCE.makeVlanReplaceActions(
-                of, Collections.emptyList(), Collections.singletonList(endpoint.getOuterVlanId()));
         OFFlowAdd expected = makeVxLanForwardingMessage(
                 command, -10,
                 of.buildMatch()
@@ -228,7 +228,7 @@ abstract class IngressFlowSegmentInstallFlowModFactoryTest extends IngressFlowMo
                         .setMasked(
                                 MatchField.METADATA,
                                 OFMetadata.of(metadata.getValue()), OFMetadata.of(metadata.getMask()))
-                        .build(), getTargetIngressTableId(), vlanTransformation);
+                        .build(), getTargetIngressTableId(), Collections.emptyList());
 
         IngressFlowModFactory factory = makeFactory(command);
         verifyOfMessageEquals(
@@ -290,8 +290,7 @@ abstract class IngressFlowSegmentInstallFlowModFactoryTest extends IngressFlowMo
                 .build(Collections.emptySet());
         List<OFAction> vlanTransformation = OfAdapter.INSTANCE.makeVlanReplaceActions(
                 of,
-                FlowEndpoint.makeVlanStack(endpoint.getInnerVlanId()),
-                endpoint.getVlanStack());
+                FlowEndpoint.makeVlanStack(endpoint.getInnerVlanId()), Collections.emptyList());
         OFFlowAdd expected = makeVxLanForwardingMessage(
                 command, 0,
                 OfAdapter.INSTANCE.matchVlanId(of, of.buildMatch(), endpoint.getInnerVlanId())
