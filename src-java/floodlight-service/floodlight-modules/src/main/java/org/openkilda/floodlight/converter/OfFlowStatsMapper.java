@@ -194,10 +194,10 @@ public abstract class OfFlowStatsMapper {
                 .stream()
                 .filter(ofAction -> ofAction.getType().equals(OFActionType.EXPERIMENTER))
                 .collect(Collectors.toSet());
-        Set<OFAction> setFieldActions = ((OFInstructionApplyActions) instruction).getActions()
+        List<OFAction> setFieldActions = ((OFInstructionApplyActions) instruction).getActions()
                 .stream()
                 .filter(ofAction -> ofAction.getType().equals(OFActionType.SET_FIELD))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
         return FlowApplyActions.builder()
                 .meter(Optional.ofNullable(actions.get(OFActionType.METER))
