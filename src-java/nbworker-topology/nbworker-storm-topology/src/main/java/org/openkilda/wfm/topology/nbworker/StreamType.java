@@ -33,5 +33,6 @@ public enum StreamType {
     HISTORY,
     FLOW_VALIDATION_WORKER,
     METER_MODIFY_WORKER,
-    PING
+    PING,
+    TO_METRICS_BOLT
 }

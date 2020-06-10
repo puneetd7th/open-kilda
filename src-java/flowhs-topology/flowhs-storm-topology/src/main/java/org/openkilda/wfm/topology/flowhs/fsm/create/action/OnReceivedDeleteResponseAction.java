@@ -22,12 +22,16 @@ import org.openkilda.floodlight.flow.response.FlowErrorResponse;
 import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class OnReceivedDeleteResponseAction extends OnReceivedInstallResponseAction {
-    public OnReceivedDeleteResponseAction(PersistenceManager persistenceManager) {
-        super(persistenceManager);
+    private final MeterRegistry meterRegistry;
+
+    public OnReceivedDeleteResponseAction(PersistenceManager persistenceManager, MeterRegistry meterRegistry) {
+        super(persistenceManager, meterRegistry);
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -35,6 +39,8 @@ public class OnReceivedDeleteResponseAction extends OnReceivedInstallResponseAct
         if (response.isSuccess()) {
             stateMachine.saveActionToHistory("Rule was deleted",
                     format("The rule was deleted: switch %s, cookie %s", response.getSwitchId(), response.getCookie()));
+            meterRegistry.counter("fsm.delete_rule.success", "flow_id",
+                    stateMachine.getFlowId()).increment();
         } else {
             FlowErrorResponse errorResponse = (FlowErrorResponse) response;
             stateMachine.getFailedCommands().add(errorResponse.getCommandId());

@@ -13,7 +13,7 @@
  *   limitations under the License.
  */
 
-package org.openkilda.wfm.topology.flowhs.metrics;
+package org.openkilda.wfm.share.metrics;
 
 import org.openkilda.messaging.Utils;
 import org.openkilda.messaging.info.Datapoint;
@@ -122,7 +122,7 @@ public class PushToStreamMeterRegistry extends MeterRegistry {
     }
 
     /**
-     * Push the current values of registered meters to the stream.
+     * Push the current values of registered meters to the specified stream.
      */
     public void pushMeters(OutputCollector collector, String streamId) {
         for (Meter meter : getMeters()) {
@@ -139,7 +139,7 @@ public class PushToStreamMeterRegistry extends MeterRegistry {
                         this::writeCustomMeter);
 
                 for (Datapoint datapoint : datapoints) {
-                    log.error("Pushing datapoint {}", datapoint);
+                    log.debug("Pushing datapoint {}", datapoint);
                     List<Object> values = Collections.singletonList(Utils.MAPPER.writeValueAsString(datapoint));
                     collector.emit(streamId, values);
                 }

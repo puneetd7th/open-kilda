@@ -54,9 +54,13 @@ import org.openkilda.wfm.error.IslNotFoundException;
 import org.openkilda.wfm.error.SwitchNotFoundException;
 import org.openkilda.wfm.share.mappers.ConnectedDeviceMapper;
 import org.openkilda.wfm.share.mappers.FlowMapper;
+import org.openkilda.wfm.share.metrics.PushToStreamMeterRegistry;
+import org.openkilda.wfm.topology.AbstractTopology;
 import org.openkilda.wfm.topology.nbworker.StreamType;
 import org.openkilda.wfm.topology.nbworker.services.FlowOperationsService;
 
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.Timer.Sample;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
@@ -71,6 +75,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class FlowOperationsBolt extends PersistenceOperationsBolt implements FlowOperationsCarrier {
+    private transient PushToStreamMeterRegistry meterRegistry;
     private transient FlowOperationsService flowOperationsService;
     private transient FeatureTogglesRepository featureTogglesRepository;
 
@@ -83,8 +88,20 @@ public class FlowOperationsBolt extends PersistenceOperationsBolt implements Flo
      */
     @Override
     public void init() {
+        meterRegistry = new PushToStreamMeterRegistry("kilda.flow_operations");
+        meterRegistry.config().commonTags("bolt_id", this.getComponentId());
+
         this.flowOperationsService = new FlowOperationsService(repositoryFactory, transactionManager);
         this.featureTogglesRepository = repositoryFactory.createFeatureTogglesRepository();
+    }
+
+    @Override
+    protected void handleInput(Tuple input) throws Exception {
+        try {
+            super.handleInput(input);
+        } finally {
+            meterRegistry.pushMeters(getOutput(), StreamType.TO_METRICS_BOLT.name());
+        }
     }
 
     @Override
@@ -179,6 +196,7 @@ public class FlowOperationsBolt extends PersistenceOperationsBolt implements Flo
     private List<GetFlowPathResponse> processGetFlowPathRequest(GetFlowPathRequest request) {
         final String errorDescription = "Could not get flow path";
 
+        Sample sample = Timer.start();
         try {
             return flowOperationsService.getFlowPath(request.getFlowId())
                     .stream()
@@ -188,6 +206,9 @@ public class FlowOperationsBolt extends PersistenceOperationsBolt implements Flo
             throw new MessageException(ErrorType.NOT_FOUND, e.getMessage(), errorDescription);
         } catch (Exception e) {
             throw new MessageException(ErrorType.INTERNAL_ERROR, e.getMessage(), errorDescription);
+        } finally {
+            sample.stop(meterRegistry.timer("get_flow_path.execution", "flow_id",
+                    request.getFlowId()));
         }
     }
 
@@ -243,6 +264,7 @@ public class FlowOperationsBolt extends PersistenceOperationsBolt implements Flo
     }
 
     private List<FlowResponse> processFlowReadRequest(FlowReadRequest readRequest) {
+        Sample sample = Timer.start();
         try {
             String flowId = readRequest.getFlowId();
             Flow f = flowOperationsService.getFlow(flowId);
@@ -255,14 +277,22 @@ public class FlowOperationsBolt extends PersistenceOperationsBolt implements Flo
         } catch (FlowNotFoundException e) {
             throw new MessageException(ErrorType.NOT_FOUND, "Can not get flow: " + e.getMessage(),
                     "Flow not found");
+        } finally {
+            sample.stop(meterRegistry.timer("flow_read.execution", "flow_id",
+                    readRequest.getFlowId()));
         }
     }
 
     private List<FlowResponse> processFlowsDumpRequest() {
-        return flowOperationsService.getAllFlows().stream()
-                .map(FlowMapper.INSTANCE::map)
-                .map(FlowResponse::new)
-                .collect(Collectors.toList());
+        Sample sample = Timer.start();
+        try {
+            return flowOperationsService.getAllFlows().stream()
+                    .map(FlowMapper.INSTANCE::map)
+                    .map(FlowResponse::new)
+                    .collect(Collectors.toList());
+        } finally {
+            sample.stop(meterRegistry.timer("flow_dump.execution"));
+        }
     }
 
     @Override
@@ -274,6 +304,7 @@ public class FlowOperationsBolt extends PersistenceOperationsBolt implements Flo
                 new Fields(MessageEncoder.FIELD_ID_PAYLOAD, MessageEncoder.FIELD_ID_CONTEXT));
         declarer.declareStream(StreamType.PING.toString(),
                 new Fields(MessageEncoder.FIELD_ID_PAYLOAD, MessageEncoder.FIELD_ID_CONTEXT));
+        declarer.declareStream(StreamType.TO_METRICS_BOLT.name(), AbstractTopology.fieldMessage);
     }
 
     @Override

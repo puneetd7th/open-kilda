@@ -264,7 +264,7 @@ public final class FlowCreateFsm extends NbTrackableFsm<FlowCreateFsm, State, Ev
             final InstallIngressRulesAction installIngressRules = new InstallIngressRulesAction(
                     commandExecutorFsmBuilder, persistenceManager);
             final OnReceivedInstallResponseAction onReceiveInstallResponse = new OnReceivedInstallResponseAction(
-                    persistenceManager);
+                    persistenceManager, meterRegistry);
             final RollbackInstalledRulesAction rollbackInstalledRules = new RollbackInstalledRulesAction(
                     commandExecutorFsmBuilder, persistenceManager);
 
@@ -390,7 +390,7 @@ public final class FlowCreateFsm extends NbTrackableFsm<FlowCreateFsm, State, Ev
                     .from(State.REMOVING_RULES)
                     .to(State.REMOVING_RULES)
                     .on(Event.RESPONSE_RECEIVED)
-                    .perform(new OnReceivedDeleteResponseAction(persistenceManager));
+                    .perform(new OnReceivedDeleteResponseAction(persistenceManager, meterRegistry));
             builder.transitions()
                     .from(State.REMOVING_RULES)
                     .toAmong(State.REVERTING, State.REVERTING)

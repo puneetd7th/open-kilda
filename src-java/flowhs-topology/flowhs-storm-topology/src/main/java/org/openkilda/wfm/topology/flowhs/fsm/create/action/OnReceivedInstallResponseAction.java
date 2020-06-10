@@ -23,12 +23,16 @@ import org.openkilda.persistence.PersistenceManager;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateContext;
 import org.openkilda.wfm.topology.flowhs.fsm.create.FlowCreateFsm;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
-    public OnReceivedInstallResponseAction(PersistenceManager persistenceManager) {
+    private final MeterRegistry meterRegistry;
+
+    public OnReceivedInstallResponseAction(PersistenceManager persistenceManager, MeterRegistry meterRegistry) {
         super(persistenceManager);
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -37,6 +41,8 @@ public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
             stateMachine.saveActionToHistory("Rule was installed",
                     format("The rule was installed: switch %s, cookie %s",
                             response.getSwitchId(), response.getCookie()));
+            meterRegistry.counter("fsm.install_rule.success", "flow_id",
+                    stateMachine.getFlowId()).increment();
         } else {
             handleError(stateMachine, response);
         }
@@ -63,5 +69,7 @@ public class OnReceivedInstallResponseAction extends OnReceivedResponseAction {
         stateMachine.saveErrorToHistory("Failed to install rule",
                 format("Failed to install the rule: switch %s, cookie %s. Error: %s",
                         errorResponse.getSwitchId(), response.getCookie(), errorResponse));
+        meterRegistry.counter("fsm.install_rule.failed", "flow_id",
+                stateMachine.getFlowId()).increment();
     }
 }
