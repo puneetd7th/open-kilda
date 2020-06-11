@@ -15,8 +15,12 @@
 
 package org.openkilda.persistence.repositories.impl;
 
+import static java.lang.String.format;
+
 import org.openkilda.model.PathId;
+import org.openkilda.model.TransitVlan;
 import org.openkilda.model.Vxlan;
+import org.openkilda.persistence.PersistenceException;
 import org.openkilda.persistence.TransactionManager;
 import org.openkilda.persistence.repositories.VxlanRepository;
 
@@ -33,6 +37,7 @@ import java.util.Optional;
  */
 public class Neo4jVxlanRepository extends Neo4jGenericRepository<Vxlan> implements VxlanRepository {
     static final String PATH_ID_PROPERTY_NAME = "path_id";
+    static final String VNI_PROPERTY_NAME = "vni";
 
     public Neo4jVxlanRepository(Neo4jSessionFactory sessionFactory, TransactionManager transactionManager) {
         super(sessionFactory, transactionManager);
@@ -47,6 +52,21 @@ public class Neo4jVxlanRepository extends Neo4jGenericRepository<Vxlan> implemen
             result = loadAll(pathIdFilter);
         }
         return result;
+    }
+
+    @Override
+    public Optional<Vxlan> findByVni(int vni) {
+        Filter vniFilter = new Filter(VNI_PROPERTY_NAME, ComparisonOperator.EQUALS, vni);
+        Collection<Vxlan> vxlans = loadAll(vniFilter);
+
+        if (vxlans.size() > 1) {
+            throw new PersistenceException(format("Found more than 1 VXLAN entity by vni '%s'", vni));
+        }
+        if (vxlans.size() == 1) {
+            return Optional.of(vxlans.iterator().next());
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override
