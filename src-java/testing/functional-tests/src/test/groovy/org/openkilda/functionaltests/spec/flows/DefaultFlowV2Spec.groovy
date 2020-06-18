@@ -36,6 +36,7 @@ class DefaultFlowV2Spec extends HealthCheckSpecification {
         given: "At least 3 traffGen switches"
         def allTraffGenSwitches = topology.activeTraffGens*.switchConnected
         assumeTrue("Unable to find required switches in topology", (allTraffGenSwitches.size() > 2) as boolean)
+        def startTime = new Date()
 
         when: "Create a vlan flow"
         def (Switch srcSwitch, Switch dstSwitch) = allTraffGenSwitches
@@ -113,6 +114,13 @@ class DefaultFlowV2Spec extends HealthCheckSpecification {
                 def resources = traffExam.startExam(direction)
                 direction.setResources(resources)
                 assert traffExam.waitExam(direction).hasTraffic()
+            }
+        }
+
+        and: "All flows write stats"
+        withPool {
+            [vlanFlow.flowId, defaultFlow.flowId, qinqFlow.flowId].eachParallel {
+                statsHelper.verifyFlowWritesStats(it, startTime)
             }
         }
 

@@ -313,7 +313,7 @@ class FlowPingSpec extends HealthCheckSpecification {
 
     def getPacketCountOfVlanPingRule(SwitchId switchId) {
         return northbound.getSwitchRules(switchId).flowEntries
-                .findAll{it.cookie == Cookie.VERIFICATION_UNICAST_RULE_COOKIE}[0].packetCount
+                .find{it.cookie == Cookie.VERIFICATION_UNICAST_RULE_COOKIE}.packetCount
     }
 
     /**
