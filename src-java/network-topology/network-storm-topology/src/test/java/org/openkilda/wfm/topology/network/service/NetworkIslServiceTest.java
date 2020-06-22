@@ -33,7 +33,11 @@ import static org.mockito.Mockito.when;
 
 import org.openkilda.config.provider.ConfigurationProvider;
 import org.openkilda.messaging.command.reroute.RerouteAffectedFlows;
+import org.openkilda.messaging.command.reroute.RerouteInactiveFlows;
 import org.openkilda.messaging.info.discovery.RemoveIslDefaultRulesResult;
+import org.openkilda.messaging.info.event.IslStatusUpdateNotification;
+import org.openkilda.messaging.info.event.PathNode;
+import org.openkilda.model.FeatureToggles;
 import org.openkilda.model.Isl;
 import org.openkilda.model.IslDownReason;
 import org.openkilda.model.IslStatus;
@@ -153,7 +157,8 @@ public class NetworkIslServiceTest {
         when(repositoryFactory.createFeatureTogglesRepository()).thenReturn(featureTogglesRepository);
         when(repositoryFactory.createSwitchPropertiesRepository()).thenReturn(switchPropertiesRepository);
 
-        when(featureTogglesRepository.find()).thenReturn(Optional.empty());
+        when(featureTogglesRepository.find()).thenReturn(Optional.of(
+                FeatureToggles.DEFAULTS.toBuilder().flowsRerouteOnIslDiscoveryEnabled(true).build()));
 
         when(transactionManager.makeRetryPolicyBlank())
                 .thenReturn(new RetryPolicy().withMaxRetries(2));
@@ -691,6 +696,88 @@ public class NetworkIslServiceTest {
         verify(dashboardLogger).onIslDown(reference);
     }
 
+    @Test
+    public void continuousReplugVsRoundTripAlive() {
+        setupIslStorageStub();
+
+        IslReference referenceAlpha = prepareActiveIsl();
+        IslReference referenceBeta = new IslReference(
+                Endpoint.of(referenceAlpha.getSource().getDatapath(), referenceAlpha.getSource().getPortNumber() + 1),
+                referenceAlpha.getDest());
+
+        Instant lastSeen = clock.instant();
+        service.roundTripStatusNotification(
+                referenceAlpha, new RoundTripStatus(referenceAlpha.getSource(), lastSeen, lastSeen));
+
+        IslDataHolder alphaSource = new IslDataHolder(
+                lookupIsl(referenceAlpha.getSource(), referenceAlpha.getDest()));
+        IslDataHolder alphaDest = new IslDataHolder(
+                lookupIsl(referenceAlpha.getDest(), referenceAlpha.getSource()));
+
+        IslDataHolder betaSource = new IslDataHolder(
+                makeIsl(referenceBeta.getSource(), referenceBeta.getDest(), false).build());
+        IslDataHolder betaDest = new IslDataHolder(
+                makeIsl(referenceBeta.getDest(), referenceBeta.getSource(), false).build());
+
+        IslStatusUpdateNotification alphaNotification = new IslStatusUpdateNotification(
+                referenceAlpha.getSource().getDatapath(), referenceAlpha.getSource().getPortNumber(),
+                referenceAlpha.getDest().getDatapath(), referenceAlpha.getDest().getPortNumber(),
+                IslStatus.MOVED);
+        IslStatusUpdateNotification betaNotification = new IslStatusUpdateNotification(
+                referenceBeta.getSource().getDatapath(), referenceBeta.getSource().getPortNumber(),
+                referenceBeta.getDest().getDatapath(), referenceBeta.getDest().getPortNumber(),
+                IslStatus.MOVED);
+        for (int i = 0; i < 100; i++) {
+            // alpha -> beta
+            service.islMove(referenceAlpha.getSource(), referenceAlpha);
+            service.islUp(referenceBeta.getSource(), referenceBeta, betaSource);
+            service.islUp(referenceBeta.getDest(), referenceBeta, betaDest);
+            service.roundTripStatusNotification(
+                    referenceBeta, new RoundTripStatus(referenceBeta.getSource(), lastSeen, lastSeen));
+
+            verifyStatus(referenceAlpha, IslStatus.MOVED);
+            verifyStatus(referenceBeta, IslStatus.ACTIVE);
+
+            verify(carrier, times(i + 1)).islStatusUpdateNotification(eq(alphaNotification));
+            verify(carrier, times(i + 1)).triggerReroute(argThat(
+                    entry -> entry instanceof RerouteAffectedFlows && Objects.equals(
+                            new PathNode(
+                                    referenceAlpha.getSource().getDatapath(),
+                                    referenceAlpha.getSource().getPortNumber(), 0),
+                            entry.getPathNode())));
+            verify(carrier, times(i + 1)).triggerReroute(argThat(
+                    entry -> entry instanceof RerouteInactiveFlows && Objects.equals(
+                            new PathNode(
+                                    referenceBeta.getSource().getDatapath(),
+                                    referenceBeta.getSource().getPortNumber(), 0),
+                            entry.getPathNode())));
+
+            // beta -> alpha
+            service.islMove(referenceBeta.getSource(), referenceBeta);
+            service.islUp(referenceAlpha.getSource(), referenceAlpha, alphaSource);
+            service.islUp(referenceAlpha.getDest(), referenceAlpha, alphaDest);
+            service.roundTripStatusNotification(
+                    referenceAlpha, new RoundTripStatus(referenceAlpha.getSource(), lastSeen, lastSeen));
+
+            verifyStatus(referenceAlpha, IslStatus.ACTIVE);
+            verifyStatus(referenceBeta, IslStatus.MOVED);
+            verify(carrier, times(i + 1)).islStatusUpdateNotification(eq(betaNotification));
+            verify(carrier, times(i + 1)).triggerReroute(argThat(
+                    entry -> entry instanceof RerouteAffectedFlows && Objects.equals(
+                            new PathNode(
+                                    referenceBeta.getSource().getDatapath(),
+                                    referenceBeta.getSource().getPortNumber(), 0),
+                            entry.getPathNode())));
+            // one extra invocation was inside {@code prepareActiveIsl()}
+            verify(carrier, times(i + 2)).triggerReroute(argThat(
+                    entry -> entry instanceof RerouteInactiveFlows && Objects.equals(
+                            new PathNode(
+                                    referenceAlpha.getSource().getDatapath(),
+                                    referenceAlpha.getSource().getPortNumber(), 0),
+                            entry.getPathNode())));
+        }
+    }
+
     private IslReference prepareBfdEnabledIsl() {
         IslReference reference = prepareActiveIsl();
 
@@ -756,6 +843,15 @@ public class NetworkIslServiceTest {
         Isl reverse = lookupIsl(endpointBeta2, endpointAlpha1);
         Assert.assertEquals(expectedReverse, reverse.getMaxBandwidth());
         Assert.assertEquals(expectedReverse, reverse.getAvailableBandwidth());
+    }
+
+    private void verifyStatus(IslReference reference, IslStatus expectedStatus) {
+        verifyStatus(lookupIsl(reference.getSource(), reference.getDest()), expectedStatus);
+        verifyStatus(lookupIsl(reference.getDest(), reference.getSource()), expectedStatus);
+    }
+
+    private void verifyStatus(Isl persistedIsl, IslStatus expectedStatus) {
+        Assert.assertEquals(expectedStatus, persistedIsl.getStatus());
     }
 
     private void emulateEmptyPersistentDb() {
