@@ -64,6 +64,8 @@ public class DiscoveryRoundTripMonitor extends DiscoveryMonitor<IslEndpointRound
         if (event == IslFsmEvent.ROUND_TRIP_STATUS) {
             Instant expireAt = evaluateExpireAtTime(context.getRoundTripStatus());
             updateEndpointStatus(context.getEndpoint(), expireAt);
+        } else {
+            reEvaluateStatus();
         }
     }
 
@@ -93,5 +95,15 @@ public class DiscoveryRoundTripMonitor extends DiscoveryMonitor<IslEndpointRound
         }
 
         return clock.instant().plus(timeLeft);
+    }
+
+    private void reEvaluateStatus() {
+        Instant now = clock.instant();
+        for (Endpoint entry : new Endpoint[]{reference.getSource(), reference.getDest()}) {
+            IslEndpointRoundTripStatus data = discoveryData.get(entry);
+            if (data != null && data.getExpireAt() != null && data.getExpireAt().isBefore(now)) {
+                discoveryData.put(entry, new IslEndpointRoundTripStatus(data.getExpireAt(), IslStatus.INACTIVE));
+            }
+        }
     }
 }
