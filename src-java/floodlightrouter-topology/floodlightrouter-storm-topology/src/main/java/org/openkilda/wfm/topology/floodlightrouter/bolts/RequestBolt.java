@@ -15,6 +15,9 @@
 
 package org.openkilda.wfm.topology.floodlightrouter.bolts;
 
+import static org.openkilda.wfm.topology.floodlightrouter.Stream.SPEAKER_FLOW_HS;
+
+import org.openkilda.floodlight.api.request.SpeakerRequest;
 import org.openkilda.messaging.AbstractMessage;
 import org.openkilda.messaging.Message;
 import org.openkilda.model.SwitchId;
@@ -34,6 +37,8 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Set;
 
 @Slf4j
@@ -92,6 +97,13 @@ public class RequestBolt extends AbstractBolt {
         String targetStream = Stream.formatWithRegion(outputMessageStream, region);
         String key = pullRequestKey(input);
         Object value = pullRequest(input);
+
+        if (outputMessageStream.equals(SPEAKER_FLOW_HS) && value instanceof SpeakerRequest) {
+            long requestCreateTime = ((SpeakerRequest) value).getMessageContext().getCreateTime();
+            log.error("Message to SPEAKER_FLOW_HS: {}", Duration.between(Instant.ofEpochMilli(requestCreateTime),
+                    Instant.now()).abs());
+        }
+
         getOutput().emit(targetStream, input, makeSpeakerTuple(key, value));
     }
 
@@ -118,7 +130,7 @@ public class RequestBolt extends AbstractBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         Fields fields = new Fields(FieldNameBasedTupleToKafkaMapper.BOLT_KEY,
-                                   FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE);
+                FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE);
         if (regions == null || regions.isEmpty()) {
             outputFieldsDeclarer.declareStream(outputMessageStream, fields);
         } else {

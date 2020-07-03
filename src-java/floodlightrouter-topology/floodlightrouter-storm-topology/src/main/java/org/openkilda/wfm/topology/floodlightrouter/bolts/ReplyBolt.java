@@ -15,6 +15,9 @@
 
 package org.openkilda.wfm.topology.floodlightrouter.bolts;
 
+import static org.openkilda.wfm.topology.floodlightrouter.Stream.KILDA_HS_FLOW;
+
+import org.openkilda.floodlight.api.response.SpeakerFlowSegmentResponse;
 import org.openkilda.wfm.AbstractBolt;
 import org.openkilda.wfm.topology.AbstractTopology;
 import org.openkilda.wfm.topology.utils.MessageKafkaTranslator;
@@ -25,6 +28,9 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+
+import java.time.Duration;
+import java.time.Instant;
 
 @Slf4j
 public class ReplyBolt extends AbstractBolt {
@@ -39,6 +45,16 @@ public class ReplyBolt extends AbstractBolt {
     protected void handleInput(Tuple input) throws Exception {
         String key = input.getStringByField(AbstractTopology.KEY_FIELD);
         Object message = pullValue(input, MessageKafkaTranslator.FIELD_ID_PAYLOAD, Object.class);
+
+        if (outputStream.equals(KILDA_HS_FLOW) && message instanceof SpeakerFlowSegmentResponse) {
+            SpeakerFlowSegmentResponse message1 = (SpeakerFlowSegmentResponse) message;
+            long responseCreateTime = message1.getResponseCreateTime();
+            log.error("Message to KILDA_HS_FLOW: {}", Duration.between(Instant.ofEpochMilli(responseCreateTime),
+                    Instant.now()).abs());
+            message1.setRouterPassTime(Instant.now().toEpochMilli());
+        }
+
+
         Values values = new Values(key, message);
         getOutput().emit(outputStream, input, values);
     }
@@ -46,7 +62,7 @@ public class ReplyBolt extends AbstractBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         Fields fields = new Fields(FieldNameBasedTupleToKafkaMapper.BOLT_KEY,
-                                   FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE);
+                FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE);
         outputFieldsDeclarer.declareStream(outputStream, fields);
     }
 }
